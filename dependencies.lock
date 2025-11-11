@@ -1,0 +1,54 @@
+dependencies:
+  espressif/cjson:
+    component_hash: 9372811fb197926f522c467627cf4a8e72b681e0366e17879631da801103aef3
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.7.19
+  espressif/esp_modem:
+    component_hash: 40af7f39c6c8c0c85c98014721fca8d9d2186f18f70645c66b94548192cf1e03
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.1'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.4.2
+  espressif/w5500:
+    component_hash: 0bfa69f4ebd57ec8554ee28f31f777f06df549dcb69f48121845402d447d077a
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=6.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.0.0
+  idf:
+    source:
+      type: idf
+    version: 6.1.0
+  joltwallet/littlefs:
+    component_hash: 8e12955f47e27e6070b76715a96d6c75fc2b44f069e8c33679332d9bdd3120c4
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.20.1
+direct_dependencies:
+- espressif/cjson
+- espressif/esp_modem
+- espressif/w5500
+- idf
+- joltwallet/littlefs
+manifest_hash: 2f44c8de67f6023b5c06fef03f93345331f2040ba6a8735642141327c9578dd0
+target: esp32s3
+version: 2.0.0

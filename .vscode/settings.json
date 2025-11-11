@@ -1,0 +1,19 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPath": "/home/dhonan-ubuntu/esp/esp-idf",
+  "idf.pythonInstallPath": "/usr/bin/python3",
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
+  "idf.port": "/dev/ttyS0",
+  "idf.toolsPath": "/home/dhonan-ubuntu/.espressif",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32s3"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss",
+    "*.tpp": "cpp",
+    "*.inl": "cpp",
+    "spi.h": "c"
+  }
+}
