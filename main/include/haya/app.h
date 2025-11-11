@@ -1,0 +1,239 @@
+/**
+ * @file haya/app.h
+ * @brief An application task wrapper for FreeRTOS.
+ *
+ * This module provides a simplified abstraction for managing the lifecycle
+ * of a FreeRTOS task (e.g., setup, loop, pause, resume, stop).
+ * It handles the underlying FreeRTOS synchronization primitives (like tasks
+ * and event groups) to ensure a robust, thread-safe state machine.
+ *
+ * @note The typical usage is to create a handle with hyAppNew(),
+ * set callbacks with hyAppSetCallbackGroup(), and manage
+ * the task with hyAppStart(), hyAppStop(), etc.
+ */
+
+#ifndef __HAYA_APP_H
+#define __HAYA_APP_H
+
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "haya/error.h"
+
+/**
+ * @defgroup haya_app_internal Internal App Defines
+ * @brief Internal timeouts and event bits for task synchronization.
+ * @internal
+ * @{
+ */
+#define _HY_APP_START_TIMEOUT pdMS_TO_TICKS(1000)     /**< @brief Max time to wait for task to confirm it's running. */
+#define _HY_APP_AFTER_SETUP_DELAY pdMS_TO_TICKS(1000) /**< @brief Short delay after on_setup completes before on_loop. */
+#define _HY_APP_TOLERANCE_DELAY pdMS_TO_TICKS(1000)   /**< @brief Generic tolerance for state change confirmations. */
+#define _HY_APP_EVENT_RUNNING_BIT (1 << 0)            /**< @brief Bit set by task when it's alive (cleared by start). */
+#define _HY_APP_EVENT_STOPPED_BIT (1 << 1)            /**< @brief Bit set by task just before it self-deletes. */
+#define _HY_APP_EVENT_PAUSED_BIT (1 << 2)             /**< @brief Bit set by task when it enters the paused state. */
+#define _HY_APP_EVENT_RESUMED_BIT (1 << 3)            /**< @brief Bit set by task when it exits the paused state. */
+#define _HY_APP_EVENT_RESUME_CMD_BIT (1 << 4)         /**< @brief Bit set by hyAppResume() to command the task to resume. */
+/** @} */
+
+/**
+ * @brief A generic callback function pointer.
+ * @param arg The user-defined parameter, originally passed in HyAppConfig.
+ */
+typedef void (*HyAppCallback)(void *arg);
+
+/**
+ * @brief Abstracted task priorities for FreeRTOS.
+ * @note These priorities map directly to FreeRTOS priorities,
+ * from tskIDLE_PRIORITY (0) up to (configMAX_PRIORITIES - 1).
+ */
+typedef enum
+{
+    HY_APP_PRIORITY_IDLE_0,     /**< Priority 0 (tskIDLE_PRIORITY) */
+    HY_APP_PRIORITY_IDLE_1,     /**< Priority 1 */
+    HY_APP_PRIORITY_IDLE_2,     /**< Priority 2 */
+    HY_APP_PRIORITY_IDLE_3,     /**< Priority 3 */
+    HY_APP_PRIORITY_IDLE_4,     /**< Priority 4 */
+    HY_APP_PRIORITY_LOW_0,      /**< Priority 5 */
+    HY_APP_PRIORITY_LOW_1,      /**< Priority 6 */
+    HY_APP_PRIORITY_LOW_2,      /**< Priority 7 */
+    HY_APP_PRIORITY_LOW_3,      /**< Priority 8 */
+    HY_APP_PRIORITY_LOW_4,      /**< Priority 9 */
+    HY_APP_PRIORITY_MODERATE_0, /**< Priority 10 */
+    HY_APP_PRIORITY_MODERATE_1, /**< Priority 11 */
+    HY_APP_PRIORITY_MODERATE_2, /**< Priority 12 */
+    HY_APP_PRIORITY_MODERATE_3, /**< Priority 13 */
+    HY_APP_PRIORITY_MODERATE_4, /**< Priority 14 */
+    HY_APP_PRIORITY_HIGH_0,     /**< Priority 15 */
+    HY_APP_PRIORITY_HIGH_1,     /**< Priority 16 */
+    HY_APP_PRIORITY_HIGH_2,     /**< Priority 17 */
+    HY_APP_PRIORITY_HIGH_3,     /**< Priority 18 */
+    HY_APP_PRIORITY_HIGH_4,     /**< Priority 19 */
+    HY_APP_PRIORITY_REALTIME_0, /**< Priority 20 */
+    HY_APP_PRIORITY_REALTIME_1, /**< Priority 21 */
+    HY_APP_PRIORITY_REALTIME_2, /**< Priority 22 */
+    HY_APP_PRIORITY_REALTIME_3, /**< Priority 23 */
+    HY_APP_PRIORITY_REALTIME_4  /**< Priority 24 (configMAX_PRIORITIES - 1) */
+} HyAppPriority;
+
+/**
+ * @brief Configuration structure for creating a new application handle.
+ *
+ * This structure is filled by the user and passed to hyAppNew().
+ */
+typedef struct
+{
+    char *name;             /**< @brief The name for the FreeRTOS task.
+                             * @note A deep copy of this string is made,
+                             * so the original can be a stack variable. */
+    HyAppPriority priority; /**< @brief Task priority, see HyAppPriority. */
+    size_t stack_size;      /**< @brief Stack size for the task, in bytes. */
+    TickType_t sleep_tick;  /**< @brief Ticks to delay in the on_loop callback (vTaskDelay). */
+    void *param;            /**< @brief A user-defined parameter that will be passed
+                             * to all callbacks. */
+} HyAppConfig;
+
+/**
+ * @brief A structure to hold all application lifecycle callbacks.
+ *
+ * @note This struct is initialized by the user and passed to
+ * hyAppSetCallbackGroup().
+ * @warning The hyAppSetCallbackGroup() function is not thread-safe and
+ * should only be called when the task is stopped or paused.
+ */
+typedef struct
+{
+    HyAppCallback on_setup;   /**< @brief Called once after the task starts, before the loop. */
+    HyAppCallback on_loop;    /**< @brief The main application loop. Called repeatedly. */
+    HyAppCallback on_paused;  /**< @brief Called once when the task enters the paused state. */
+    HyAppCallback on_resumed; /**< @brief Called once when the task resumes from pause. */
+    HyAppCallback on_stopped; /**< @brief Called once when the task is stopping, before it self-deletes. */
+} HyAppCallbackGroup;
+
+/**
+ * @brief The main application handle.
+ * @note This is an opaque handle. Its members are internal and should
+ * not be modified directly by the user.
+ */
+typedef struct
+{
+    TaskHandle_t _th;       /**< @internal Task handle for the application. */
+    EventGroupHandle_t _ev; /**< @internal Event group for state synchronization. */
+    HyAppConfig _cfg;       /**< @internal A copy of the user's configuration. */
+    HyAppCallbackGroup _cb; /**< @internal A copy of the user's callbacks. */
+    volatile bool _ok;      /**< @internal Internal flag to control the main loop (true = run). */
+    volatile bool _sus;     /**< @internal Internal flag to control pause state (true = pause). */
+} HyAppHandle;
+
+/**
+ * @brief Creates a new application handle and allocates resources.
+ *
+ * This function allocates memory for the handle, its event group, and
+ * a deep copy of the task name from the config.
+ *
+ * @param cfg A pointer to the configuration struct. Must not be NULL.
+ * @return A pointer to the new HyAppHandle, or NULL on failure
+ * (e.g., out of memory).
+ * @note The returned handle must be freed using hyAppDelete().
+ */
+HyAppHandle *hyAppNew(HyAppConfig *cfg);
+
+/**
+ * @brief Stops (if running) and deletes an application handle.
+ *
+ * This function will gracefully stop the associated task if it is running.
+ * It then frees all resources allocated by hyAppNew() (the handle,
+ * the task name, and the event group).
+ *
+ * @param h The application handle to delete.
+ * @return HY_ERR_NONE on success, or HY_ERR_BAD_ARGS if h is NULL.
+ */
+HyErr hyAppDelete(HyAppHandle *h);
+
+/**
+ * @brief Sets the callback functions for the application.
+ *
+ * @param h The application handle.
+ * @param cb A pointer to the struct containing the callback function pointers.
+ * @return HY_ERR_NONE on success.
+ * @warning This function is NOT thread-safe. It should only be called
+ * when the application task is stopped or paused.
+ */
+HyErr hyAppSetCallbackGroup(HyAppHandle *h, HyAppCallbackGroup *cb);
+
+/**
+ * @brief Starts the application task.
+ *
+ * This function creates and starts the FreeRTOS task. It will block
+ * for up to _HY_APP_START_TIMEOUT milliseconds waiting for the task
+ * to confirm it is running.
+ *
+ * @param h The application handle.
+ * @return HY_ERR_NONE on success.
+ * @return HY_ERR_BAD_ARGS if h is NULL.
+ * @return HY_ERR_FAILURE if the task could not be created.
+ * @return HY_ERR_TIMEOUT if the task failed to start in time.
+ */
+HyErr hyAppStart(HyAppHandle *h);
+
+/**
+ * @brief Signals the application task to stop gracefully.
+ *
+ * This is a blocking function. It signals the task to stop and waits
+ * for confirmation. If the task does not stop gracefully within the
+ * timeout period, it will be forcibly deleted.
+ *
+ * @param h The application handle.
+ * @return HY_ERR_NONE on a successful, graceful stop.
+ * @return HY_ERR_BAD_ARGS if h is NULL.
+ * @return HY_ERR_TIMEOUT if the task did not stop gracefully and
+ * required a forced kill.
+ */
+HyErr hyAppStop(HyAppHandle *h);
+
+/**
+ * @brief Signals the application task to pause.
+ *
+ * This is a blocking function. It signals the task to pause and waits
+ * for confirmation.
+ *
+ * @param h The application handle.
+ * @return HY_ERR_NONE on success (or if already paused).
+ * @return HY_ERR_BAD_ARGS if h is NULL.
+ * @return HY_ERR_TIMEOUT if the task fails to confirm the pause.
+ * @note This function is idempotent (it is safe to call on a task
+ * that is already paused).
+ */
+HyErr hyAppPause(HyAppHandle *h);
+
+/**
+ * @brief Signals a paused application task to resume.
+ *
+ * This is a blocking function. It commands the task to resume and waits
+ * for confirmation.
+ *
+ * @param h The application handle.
+ * @return HY_ERR_NONE on success (or if already running).
+ * @return HY_ERR_BAD_ARGS if h is NULL.
+ * @return HY_ERR_TIMEOUT if the task fails to confirm it has resumed.
+ * @note This function is idempotent (it is safe to call on a task
+ * that is already running).
+ */
+HyErr hyAppResume(HyAppHandle *h);
+
+/**
+ * @internal
+ * @brief The main FreeRTOS task wrapper function.
+ *
+ * This function implements the core state machine (setup, loop,
+ * paused, stopped) based on the flags and event bits in the handle.
+ *
+ * @param pvParameter A void pointer to the HyAppHandle.
+ * @note Do not call this function directly. It is passed to xTaskCreate().
+ */
+HyErr _hyAppTaskWrapper(void *pvParameter);
+
+#endif
