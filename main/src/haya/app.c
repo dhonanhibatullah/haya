@@ -38,6 +38,7 @@ HyAppHandle *hyAppNew(HyAppConfig *cfg)
     new->_cb.on_resumed = NULL;
     new->_cb.on_stopped = NULL;
 
+    new->_exit_code = HY_APP_EXIT_CODE_NONE;
     new->_ok = false;
     new->_sus = false;
 
@@ -177,6 +178,14 @@ HyErr hyAppResume(HyAppHandle *h)
     return HY_ERR_NONE;
 }
 
+HyAppExitCode hyAppExitCode(HyAppHandle *h)
+{
+    if (h == NULL)
+        return HY_APP_EXIT_CODE_NONE;
+
+    return h->_exit_code;
+}
+
 HyErr _hyAppTaskWrapper(void *pvParameter)
 {
     HyAppHandle *h = (HyAppHandle *)pvParameter;
@@ -185,9 +194,14 @@ HyErr _hyAppTaskWrapper(void *pvParameter)
     xEventGroupSetBits(h->_ev, _HY_APP_EVENT_RUNNING_BIT);
 
     if (h->_cb.on_setup != NULL)
-        h->_cb.on_setup(h->_cfg.param);
+    {
+        h->_exit_code = h->_cb.on_setup(h->_cfg.param);
+        if (h->_exit_code != HY_APP_EXIT_CODE_NONE)
+            h->_ok = false;
+    }
 
-    vTaskDelay(_HY_APP_AFTER_SETUP_DELAY);
+    if (h->_ok)
+        vTaskDelay(_HY_APP_AFTER_SETUP_DELAY);
 
     while (h->_ok)
     {
@@ -197,6 +211,7 @@ HyErr _hyAppTaskWrapper(void *pvParameter)
             {
                 sus_notif = true;
                 xEventGroupSetBits(h->_ev, _HY_APP_EVENT_PAUSED_BIT);
+
                 if (h->_cb.on_paused != NULL)
                     h->_cb.on_paused(h->_cfg.param);
             }
@@ -213,6 +228,7 @@ HyErr _hyAppTaskWrapper(void *pvParameter)
                 sus_notif = false;
                 xEventGroupClearBits(h->_ev, _HY_APP_EVENT_PAUSED_BIT);
                 xEventGroupSetBits(h->_ev, _HY_APP_EVENT_RESUMED_BIT);
+
                 if (h->_cb.on_resumed != NULL)
                     h->_cb.on_resumed(h->_cfg.param);
             }
@@ -221,7 +237,14 @@ HyErr _hyAppTaskWrapper(void *pvParameter)
         }
 
         if (h->_cb.on_loop != NULL)
-            h->_cb.on_loop(h->_cfg.param);
+        {
+            h->_exit_code = h->_cb.on_loop(h->_cfg.param);
+            if (h->_exit_code != HY_APP_EXIT_CODE_NONE)
+            {
+                h->_ok = false;
+                break;
+            }
+        }
 
         vTaskDelay(h->_cfg.sleep_tick);
     }

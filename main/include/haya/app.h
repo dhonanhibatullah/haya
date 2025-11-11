@@ -40,12 +40,6 @@
 /** @} */
 
 /**
- * @brief A generic callback function pointer.
- * @param arg The user-defined parameter, originally passed in HyAppConfig.
- */
-typedef void (*HyAppCallback)(void *arg);
-
-/**
  * @brief Abstracted task priorities for FreeRTOS.
  * @note These priorities map directly to FreeRTOS priorities,
  * from tskIDLE_PRIORITY (0) up to (configMAX_PRIORITIES - 1).
@@ -80,6 +74,41 @@ typedef enum
 } HyAppPriority;
 
 /**
+ * @brief Application exit codes.
+ *
+ * Callbacks (like on_setup, on_loop) can return these codes to
+ * signal a fatal error and request the task to stop gracefully.
+ */
+typedef enum
+{
+    HY_APP_EXIT_CODE_0,   /**< User-defined exit code 0 */
+    HY_APP_EXIT_CODE_1,   /**< User-defined exit code 1 */
+    HY_APP_EXIT_CODE_2,   /**< User-defined exit code 2 */
+    HY_APP_EXIT_CODE_3,   /**< User-defined exit code 3 */
+    HY_APP_EXIT_CODE_4,   /**< User-defined exit code 4 */
+    HY_APP_EXIT_CODE_5,   /**< User-defined exit code 5 */
+    HY_APP_EXIT_CODE_6,   /**< User-defined exit code 6 */
+    HY_APP_EXIT_CODE_7,   /**< User-defined exit code 7 */
+    HY_APP_EXIT_CODE_NONE /**< Special code: No error, continue running. */
+} HyAppExitCode;
+
+/**
+ * @brief A callback function pointer that can return an exit code.
+ * @param arg The user-defined parameter, originally passed in HyAppConfig.
+ * @return A `HyAppExitCode`. Returning any value other than
+ * `HY_APP_EXIT_CODE_NONE` will cause the task to stop.
+ */
+typedef HyAppExitCode (*HyAppCallback)(void *arg);
+
+/**
+ * @brief A callback function pointer that does not return a value.
+ *
+ * Used for callbacks that cannot trigger a task stop (e.g., on_stopped).
+ * @param arg The user-defined parameter, originally passed in HyAppConfig.
+ */
+typedef void (*HyAppVoidCallback)(void *arg);
+
+/**
  * @brief Configuration structure for creating a new application handle.
  *
  * This structure is filled by the user and passed to hyAppNew().
@@ -106,11 +135,35 @@ typedef struct
  */
 typedef struct
 {
-    HyAppCallback on_setup;   /**< @brief Called once after the task starts, before the loop. */
-    HyAppCallback on_loop;    /**< @brief The main application loop. Called repeatedly. */
-    HyAppCallback on_paused;  /**< @brief Called once when the task enters the paused state. */
-    HyAppCallback on_resumed; /**< @brief Called once when the task resumes from pause. */
-    HyAppCallback on_stopped; /**< @brief Called once when the task is stopping, before it self-deletes. */
+    /**
+     * @brief Called once after the task starts.
+     * @note Returning an exit code (not NONE) will stop the task.
+     */
+    HyAppCallback on_setup;
+
+    /**
+     * @brief The main application loop. Called repeatedly.
+     * @note Returning an exit code (not NONE) will stop the task.
+     */
+    HyAppCallback on_loop;
+
+    /**
+     * @brief Called once when the task enters the paused state.
+     * @note This callback cannot return an exit code.
+     */
+    HyAppVoidCallback on_paused;
+
+    /**
+     * @brief Called once when the task resumes from pause.
+     * @note This callback cannot return an exit code.
+     */
+    HyAppVoidCallback on_resumed;
+
+    /**
+     * @brief Called once when the task is stopping, before it self-deletes.
+     * @note This callback cannot return an exit code.
+     */
+    HyAppVoidCallback on_stopped;
 } HyAppCallbackGroup;
 
 /**
@@ -120,12 +173,13 @@ typedef struct
  */
 typedef struct
 {
-    TaskHandle_t _th;       /**< @internal Task handle for the application. */
-    EventGroupHandle_t _ev; /**< @internal Event group for state synchronization. */
-    HyAppConfig _cfg;       /**< @internal A copy of the user's configuration. */
-    HyAppCallbackGroup _cb; /**< @internal A copy of the user's callbacks. */
-    volatile bool _ok;      /**< @internal Internal flag to control the main loop (true = run). */
-    volatile bool _sus;     /**< @internal Internal flag to control pause state (true = pause). */
+    TaskHandle_t _th;                  /**< @internal Task handle for the application. */
+    EventGroupHandle_t _ev;            /**< @internal Event group for state synchronization. */
+    HyAppConfig _cfg;                  /**< @internal A copy of the user's configuration. */
+    HyAppCallbackGroup _cb;            /**< @internal A copy of the user's callbacks. */
+    volatile HyAppExitCode _exit_code; /**< @internal Stores the exit code returned by a callback. */
+    volatile bool _ok;                 /**< @internal Internal flag to control the main loop (true = run). */
+    volatile bool _sus;                /**< @internal Internal flag to control pause state (true = pause). */
 } HyAppHandle;
 
 /**
@@ -223,6 +277,20 @@ HyErr hyAppPause(HyAppHandle *h);
  * that is already running).
  */
 HyErr hyAppResume(HyAppHandle *h);
+
+/**
+ * @brief Gets the exit code from a stopped application handle.
+ *
+ * This function is used to check *why* an application task stopped.
+ * It should be called after `hyAppStop()` returns, or after confirming
+ * the task is no longer running.
+ *
+ * @param h The application handle.
+ * @return The `HyAppExitCode` returned by the callback that triggered
+ * the stop, or `HY_APP_EXIT_CODE_NONE` if it was stopped
+ * manually via `hyAppStop()`.
+ */
+HyAppExitCode hyAppExitCode(HyAppHandle *h);
 
 /**
  * @internal
