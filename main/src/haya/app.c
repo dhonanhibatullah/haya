@@ -1,8 +1,10 @@
 #include "haya/app.h"
 
+QueueHandle_t _app_exit_q = NULL;
+
 HyAppHandle *hyAppNew(HyAppConfig *cfg)
 {
-    if (cfg == NULL)
+    if (_app_exit_q == NULL || cfg == NULL)
         return NULL;
 
     HyAppHandle *new = (HyAppHandle *)malloc(sizeof(HyAppHandle));
@@ -45,26 +47,6 @@ HyAppHandle *hyAppNew(HyAppConfig *cfg)
     return new;
 }
 
-HyErr hyAppDelete(HyAppHandle *h)
-{
-    if (h == NULL)
-        return HY_ERR_BAD_ARGS;
-
-    if (h->_th != NULL)
-        hyAppStop(h);
-
-    free(h->_cfg.name);
-
-    if (h->_ev != NULL)
-    {
-        vEventGroupDelete(h->_ev);
-        h->_ev = NULL;
-    }
-
-    free(h);
-    return HY_ERR_NONE;
-}
-
 HyErr hyAppSetCallbackGroup(HyAppHandle *h, HyAppCallbackGroup *cb)
 {
     if (h == NULL || cb == NULL)
@@ -101,7 +83,7 @@ HyErr hyAppStart(HyAppHandle *h)
     EventBits_t ev_bits = xEventGroupWaitBits(
         h->_ev,
         _HY_APP_EVENT_RUNNING_BIT,
-        pdTRUE,
+        pdFALSE,
         pdFALSE,
         _HY_APP_START_TIMEOUT);
     if ((ev_bits & _HY_APP_EVENT_RUNNING_BIT) != _HY_APP_EVENT_RUNNING_BIT)
@@ -254,9 +236,38 @@ void _hyAppTaskWrapper(void *pvParameter)
         vTaskDelay(h->_cfg.sleep_tick);
     }
 
+    xEventGroupClearBits(h->_ev, _HY_APP_EVENT_RUNNING_BIT);
     xEventGroupSetBits(h->_ev, _HY_APP_EVENT_STOPPED_BIT);
+
     if (h->_cb.on_stopped != NULL)
         h->_cb.on_stopped(h->_cfg.param);
 
+    xQueueSend(_app_exit_q, &h, 0);
     vTaskDelete(NULL);
+}
+
+bool _hyAppInit()
+{
+    _app_exit_q = xQueueCreate(_HY_APP_EXIT_QUEUE_LEN, sizeof(HyAppHandle *));
+    if (_app_exit_q == NULL)
+        return false;
+    return true;
+}
+
+HyErr _hyAppDelete(HyAppHandle *h)
+{
+    if (h == NULL)
+        return HY_ERR_BAD_ARGS;
+
+    free(h->_cfg.name);
+    h->_cfg.name = NULL;
+
+    if (h->_ev != NULL)
+    {
+        vEventGroupDelete(h->_ev);
+        h->_ev = NULL;
+    }
+
+    free(h);
+    return HY_ERR_NONE;
 }
