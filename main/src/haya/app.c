@@ -242,6 +242,7 @@ void _hyAppTaskWrapper(void *pvParameter)
     if (h->_cb.on_stopped != NULL)
         h->_cb.on_stopped(h->_cfg.param);
 
+    vTaskDelay(_HY_APP_EXIT_QUEUE_SEND_DELAY);
     xQueueSend(_hy_app_exit_q, &h, 0);
     vTaskDelete(NULL);
 }
