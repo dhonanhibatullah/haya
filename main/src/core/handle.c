@@ -2,11 +2,25 @@
 
 const char *CORE_HANDLE_TAG = "core/handle";
 
-void coreSetup()
+void coreSetup(Core *core)
 {
+    HyErr err = hyLogSetup();
+    if (err != HY_ERR_NONE)
+    {
+        hyLogError(
+            CORE_HANDLE_TAG,
+            "failed to setup log: %s",
+            hyErrToStr(err));
+        coreRestart(3000);
+    }
+    hyLogInfo(
+        CORE_HANDLE_TAG,
+        "log setup success");
+
+    coreInterfaceConfig(core->i);
 }
 
-void coreLoop()
+void coreLoop(Core *core)
 {
     HyAppHandle *app_handle;
     while (1)
