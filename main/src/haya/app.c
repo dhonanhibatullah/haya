@@ -1,10 +1,10 @@
 #include "haya/app.h"
 
-QueueHandle_t _app_exit_q = NULL;
+QueueHandle_t _hy_app_exit_q = NULL;
 
 HyAppHandle *hyAppNew(HyAppConfig *cfg)
 {
-    if (_app_exit_q == NULL || cfg == NULL)
+    if (_hy_app_exit_q == NULL || cfg == NULL)
         return NULL;
 
     HyAppHandle *new = (HyAppHandle *)malloc(sizeof(HyAppHandle));
@@ -242,14 +242,14 @@ void _hyAppTaskWrapper(void *pvParameter)
     if (h->_cb.on_stopped != NULL)
         h->_cb.on_stopped(h->_cfg.param);
 
-    xQueueSend(_app_exit_q, &h, 0);
+    xQueueSend(_hy_app_exit_q, &h, 0);
     vTaskDelete(NULL);
 }
 
 bool _hyAppInit()
 {
-    _app_exit_q = xQueueCreate(_HY_APP_EXIT_QUEUE_LEN, sizeof(HyAppHandle *));
-    if (_app_exit_q == NULL)
+    _hy_app_exit_q = xQueueCreate(_HY_APP_EXIT_QUEUE_LEN, sizeof(HyAppHandle *));
+    if (_hy_app_exit_q == NULL)
         return false;
     return true;
 }

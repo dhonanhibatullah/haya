@@ -138,7 +138,7 @@ typedef void (*HyAppVoidCallback)(void *arg);
  * A central manager task is expected to listen to this queue to
  * process the `HyAppExitAction` for the stopped app.
  */
-extern QueueHandle_t _app_exit_q;
+extern QueueHandle_t _hy_app_exit_q;
 
 /**
  * @brief Configuration structure for creating a new application handle.
