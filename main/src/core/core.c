@@ -2,9 +2,10 @@
 
 void coreRun()
 {
-    coreSetup();
+    Core core;
+    coreSetup(&core);
 
     // ____[ USER APPS START ]____
 
-    coreLoop();
+    coreLoop(&core);
 }
