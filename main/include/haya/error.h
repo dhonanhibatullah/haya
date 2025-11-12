@@ -29,11 +29,7 @@
  * @brief Internal string array for error code lookup.
  * @internal
  */
-const char *_HY_ERR_STRINGS[] = {
-#define X(name) #name,
-    _HY_ERR_LIST
-#undef X
-};
+extern const char *_HY_ERR_STRINGS[];
 
 /**
  * @brief Enumeration of standard Haya library error codes.
