@@ -67,11 +67,16 @@ HyErr hyAppDelete(HyAppHandle *h)
 
 HyErr hyAppSetCallbackGroup(HyAppHandle *h, HyAppCallbackGroup *cb)
 {
+    if (h == NULL || cb == NULL)
+        return HY_ERR_BAD_ARGS;
+
     h->_cb.on_setup = cb->on_setup;
     h->_cb.on_loop = cb->on_loop;
     h->_cb.on_paused = cb->on_paused;
     h->_cb.on_resumed = cb->on_resumed;
     h->_cb.on_stopped = cb->on_stopped;
+
+    return HY_ERR_NONE;
 }
 
 HyErr hyAppStart(HyAppHandle *h)
@@ -186,7 +191,7 @@ HyAppExitCode hyAppExitCode(HyAppHandle *h)
     return h->_exit_code;
 }
 
-HyErr _hyAppTaskWrapper(void *pvParameter)
+void _hyAppTaskWrapper(void *pvParameter)
 {
     HyAppHandle *h = (HyAppHandle *)pvParameter;
     bool sus_notif = false;

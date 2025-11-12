@@ -302,6 +302,6 @@ HyAppExitCode hyAppExitCode(HyAppHandle *h);
  * @param pvParameter A void pointer to the HyAppHandle.
  * @note Do not call this function directly. It is passed to xTaskCreate().
  */
-HyErr _hyAppTaskWrapper(void *pvParameter);
+void _hyAppTaskWrapper(void *pvParameter);
 
 #endif
