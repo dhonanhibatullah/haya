@@ -1,8 +1,8 @@
-#include "core/interface/uart.h"
+#include "haya/interface/uart.h"
 
 esp_err_t hayaInterfaceUARTSetup(
     uart_port_t uart_port,
-    HAYAInterfaceUARTType uart_type,
+    HyInterfaceUARTType uart_type,
     int baud_rate,
     int rx_pin,
     int tx_pin,
