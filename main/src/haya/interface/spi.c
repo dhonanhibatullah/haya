@@ -1,4 +1,4 @@
-#include "core/interface/spi.h"
+#include "haya/interface/spi.h"
 
 esp_err_t hyInterfaceSPISetup(
     spi_host_device_t spi_host,
