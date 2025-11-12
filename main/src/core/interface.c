@@ -155,5 +155,113 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_TWAI_ENABLE == 1
+#if ICG_TWAI_ENABLE_FILTER == 1
+    uint32_t filt_id_list[] = ICG_TWAI_ID_LIST;
+#else
+    uint32_t *filt_id_list = NULL;
+#endif
+    err = hyInterfaceTWAISetup(
+        &i->twai_handle,
+        ICG_TWAI_TX_PIN,
+        ICG_TWAI_RX_PIN,
+        ICG_TWAI_BITRATE,
+        filt_id_list,
+        ICG_TWAI_ID_COUNT,
+        ICG_TWAI_MASK,
+        ICG_TWAI_EXTENDED);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            CORE_INTERFACE_TAG,
+            "failed to setup TWAI: %s, restarting device...",
+            esp_err_to_name(err));
+        esp_restart();
+    }
+    hyLogInfo(
+        CORE_INTERFACE_TAG,
+        "TWAI setup success: RATE: %d, TX: %d, RX: %d",
+        ICG_TWAI_BITRATE,
+        ICG_TWAI_TX_PIN,
+        ICG_TWAI_RX_PIN);
+#endif
+
+#if ICG_GPIO0_ENABLE == 1
+    err = hyInterfaceGPIOSetup(
+        ICG_GPIO0_PIN_MASK,
+        ICG_GPIO0_MODE,
+        ICG_GPIO0_PULLUP,
+        ICG_GPIO0_PULLDOWN,
+        ICG_GPIO0_INTR_TYPE);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            CORE_INTERFACE_TAG,
+            "failed to setup GPIO0: %s, restarting device...",
+            esp_err_to_name(err));
+        esp_restart();
+    }
+    hyLogInfo(
+        CORE_INTERFACE_TAG,
+        "GPIO0 setup success");
+#endif
+
+#if ICG_GPIO1_ENABLE == 1
+    err = hyInterfaceGPIOSetup(
+        ICG_GPIO1_PIN_MASK,
+        ICG_GPIO1_MODE,
+        ICG_GPIO1_PULLUP,
+        ICG_GPIO1_PULLDOWN,
+        ICG_GPIO1_INTR_TYPE);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            CORE_INTERFACE_TAG,
+            "failed to setup GPIO1: %s, restarting device...",
+            esp_err_to_name(err));
+        esp_restart();
+    }
+    hyLogInfo(
+        CORE_INTERFACE_TAG,
+        "GPIO1 setup success");
+#endif
+
+#if ICG_GPIO2_ENABLE == 1
+    err = hyInterfaceGPIOSetup(
+        ICG_GPIO2_PIN_MASK,
+        ICG_GPIO2_MODE,
+        ICG_GPIO2_PULLUP,
+        ICG_GPIO2_PULLDOWN,
+        ICG_GPIO2_INTR_TYPE);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            CORE_INTERFACE_TAG,
+            "failed to setup GPIO2: %s, restarting device...",
+            esp_err_to_name(err));
+        esp_restart();
+    }
+    hyLogInfo(
+        CORE_INTERFACE_TAG,
+        "GPIO2 setup success");
+#endif
+
+#if ICG_GPIO3_ENABLE == 1
+    err = hyInterfaceGPIOSetup(
+        ICG_GPIO3_PIN_MASK,
+        ICG_GPIO3_MODE,
+        ICG_GPIO3_PULLUP,
+        ICG_GPIO3_PULLDOWN,
+        ICG_GPIO3_INTR_TYPE);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            CORE_INTERFACE_TAG,
+            "failed to setup GPIO3: %s, restarting device...",
+            esp_err_to_name(err));
+        esp_restart();
+    }
+    hyLogInfo(
+        CORE_INTERFACE_TAG,
+        "GPIO3 setup success");
 #endif
 }
