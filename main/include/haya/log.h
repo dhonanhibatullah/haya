@@ -22,7 +22,7 @@
 
 #define _HY_LOG_PATH_MAX_LEN 256
 
-typedef void (*HyLogCbFunc)(void *arg, const char *, struct __va_list_tag *);
+typedef void (*HyLogCbFunc)(void *arg, const char *, va_list);
 
 typedef struct
 {
