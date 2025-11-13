@@ -36,8 +36,12 @@ esp_err_t hyPeripheralWiFiSetup(
         }};
 
     size_t saved_ssid_len = 32;
-    err = nvs_get_str(nvs, "wifi-ap-ssid", (char *)wifi_cfg.ap.ssid, &wifi_cfg.ap.ssid_len);
-    if (err != ESP_OK)
+    err = nvs_get_str(nvs, "wifi-ap-ssid", (char *)wifi_cfg.ap.ssid, &saved_ssid_len);
+    if (err == ESP_OK)
+    {
+        wifi_cfg.ap.ssid_len = saved_ssid_len;
+    }
+    else
     {
         strncpy((char *)wifi_cfg.ap.ssid, ap_ssid, ssid_len);
         wifi_cfg.ap.ssid_len = ssid_len;

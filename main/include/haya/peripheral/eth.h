@@ -2,8 +2,9 @@
 #define __HAYA_PERIPHERAL_ETH_H
 
 #include <string.h>
-#include "esp_err.h"
 #include "driver/spi_common.h"
+#include "driver/gpio.h"
+#include "esp_err.h"
 #include "esp_netif.h"
 #include "esp_eth.h"
 #include "esp_eth_mac_w5500.h"

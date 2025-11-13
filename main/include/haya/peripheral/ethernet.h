@@ -1,4 +1,0 @@
-#ifndef __PERIPHERAL_ETHERNET_H
-#define __PERIPHERAL_ETHERNET_H
-
-#endif

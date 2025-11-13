@@ -1,5 +1,5 @@
-#ifndef __PERIPHERAL_WIFI_H
-#define __PERIPHERAL_WIFI_H
+#ifndef __HAYA_PERIPHERAL_WIFI_H
+#define __HAYA_PERIPHERAL_WIFI_H
 
 #include <string.h>
 #include "esp_err.h"
@@ -9,7 +9,7 @@
 
 esp_err_t hyPeripheralWiFiSetup(
     nvs_handle_t nvs,
-    esp_netif_t **netif,
+    esp_netif_t **ap_netif,
     const char *ap_ssid,
     const char *ap_pass,
     int channel,

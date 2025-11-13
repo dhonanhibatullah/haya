@@ -6,7 +6,7 @@
 #include "sd.h"
 #include "netif.h"
 #include "wifi.h"
-#include "ethernet.h"
+#include "eth.h"
 #include "sim.h"
 
 #endif

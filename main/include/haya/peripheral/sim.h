@@ -1,4 +1,4 @@
-#ifndef __PERIPHERAL_SIM_H
-#define __PERIPHERAL_SIM_H
+#ifndef __HAYA_PERIPHERAL_SIM_H
+#define __HAYA_PERIPHERAL_SIM_H
 
 #endif
