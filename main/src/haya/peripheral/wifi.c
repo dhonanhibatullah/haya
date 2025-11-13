@@ -1,6 +1,7 @@
 #include "haya/peripheral/wifi.h"
 
 esp_err_t hyPeripheralWiFiSetup(
+    nvs_handle_t nvs,
     esp_netif_t **ap_netif,
     const char *ap_ssid,
     const char *ap_pass,
@@ -33,8 +34,23 @@ esp_err_t hyPeripheralWiFiSetup(
             .max_connection = max_connection,
             .authmode = WIFI_AUTH_OPEN,
         }};
-    strncpy((char *)wifi_cfg.ap.ssid, ap_ssid, ssid_len);
-    if (pass_len > 0)
+
+    size_t saved_ssid_len = 32;
+    err = nvs_get_str(nvs, "wifi-ap-ssid", (char *)wifi_cfg.ap.ssid, &wifi_cfg.ap.ssid_len);
+    if (err != ESP_OK)
+    {
+        strncpy((char *)wifi_cfg.ap.ssid, ap_ssid, ssid_len);
+        wifi_cfg.ap.ssid_len = ssid_len;
+    }
+
+    size_t saved_pass_len = 64;
+    err = nvs_get_str(nvs, "wifi-ap-pass", (char *)wifi_cfg.ap.ssid, &saved_pass_len);
+    if (err == ESP_OK)
+    {
+        if (saved_pass_len > 0)
+            wifi_cfg.ap.authmode = WIFI_AUTH_WPA2_PSK;
+    }
+    else if (pass_len > 0)
     {
         wifi_cfg.ap.authmode = WIFI_AUTH_WPA2_PSK;
         strncpy((char *)wifi_cfg.ap.password, ap_pass, pass_len);
