@@ -57,6 +57,7 @@ esp_err_t hyPeripheralEthW5500Setup(
     if (eth_netif_glue == NULL)
     {
         esp_netif_destroy(*netif);
+        *netif = NULL;
         esp_eth_driver_uninstall(eth_handle);
         spi_bus_remove_device(spi_handle);
         return ESP_FAIL;
@@ -67,6 +68,7 @@ esp_err_t hyPeripheralEthW5500Setup(
     {
         esp_eth_del_netif_glue(eth_netif_glue);
         esp_netif_destroy(*netif);
+        *netif = NULL;
         esp_eth_driver_uninstall(eth_handle);
         spi_bus_remove_device(spi_handle);
         return err;
@@ -77,6 +79,7 @@ esp_err_t hyPeripheralEthW5500Setup(
     {
         esp_eth_del_netif_glue(eth_netif_glue);
         esp_netif_destroy(*netif);
+        *netif = NULL;
         esp_eth_driver_uninstall(eth_handle);
         spi_bus_remove_device(spi_handle);
         return err;
