@@ -3,17 +3,19 @@
   "idf.espIdfPath": "/home/dhonan-ubuntu/esp/esp-idf",
   "idf.pythonInstallPath": "/usr/bin/python3",
   "idf.openOcdConfigs": [
-    "board/esp32s3-builtin.cfg"
+    "board/esp32-wrover-kit-3.3v.cfg"
   ],
   "idf.port": "/dev/ttyS0",
   "idf.toolsPath": "/home/dhonan-ubuntu/.espressif",
   "idf.customExtraVars": {
-    "IDF_TARGET": "esp32s3"
+    "IDF_TARGET": "esp32"
   },
   "files.associations": {
     "*.css": "tailwindcss",
     "*.tpp": "cpp",
     "*.inl": "cpp",
-    "spi.h": "c"
+    "spi.h": "c",
+    "log.h": "c",
+    "esp_wifi.h": "c"
   }
 }
