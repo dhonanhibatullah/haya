@@ -2,10 +2,8 @@
 #define __CORE_INTERFACE_H
 
 #include "esp_system.h"
-#include "driver/gpio.h"
 #include "haya/log.h"
 #include "haya/interface/interface.h"
-#include "handle.h"
 
 /**
  * @defgroup core_interface_cfg Core Interface Configuration
