@@ -6,6 +6,9 @@ esp_err_t hyInterfaceI2CSetup(
     int sda_pin,
     int scl_pin)
 {
+    if (i2c_handle == NULL)
+        return ESP_ERR_INVALID_ARG;
+
     i2c_master_bus_config_t i2cbus_config = {
         .i2c_port = i2c_port,
         .sda_io_num = sda_pin,

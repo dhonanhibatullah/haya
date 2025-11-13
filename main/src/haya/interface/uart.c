@@ -13,6 +13,9 @@ esp_err_t hayaInterfaceUARTSetup(
     int queue_size,
     QueueHandle_t *queue)
 {
+    if ((queue_size > 0) && (queue != NULL))
+        return ESP_ERR_INVALID_ARG;
+
     uart_config_t uart_config = {
         .baud_rate = baud_rate,
         .source_clk = UART_SCLK_DEFAULT,
@@ -80,9 +83,20 @@ esp_err_t hayaInterfaceUARTSetup(
         break;
     }
 
-    esp_err_t err = uart_driver_install(uart_port, rx_buf_size, tx_buf_size, queue_size, queue, 0);
-    if (err != ESP_OK)
-        return err;
+    esp_err_t err;
+
+    if (queue_size == 0)
+    {
+        err = uart_driver_install(uart_port, rx_buf_size, tx_buf_size, 0, NULL, 0);
+        if (err != ESP_OK)
+            return err;
+    }
+    else
+    {
+        err = uart_driver_install(uart_port, rx_buf_size, tx_buf_size, queue_size, queue, 0);
+        if (err != ESP_OK)
+            return err;
+    }
 
     err = uart_param_config(uart_port, &uart_config);
     if (err != ESP_OK)

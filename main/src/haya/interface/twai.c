@@ -10,6 +10,9 @@ esp_err_t hyInterfaceTWAISetup(
     uint32_t filter_mask,
     uint32_t filter_is_ext)
 {
+    if (twai_handle == NULL)
+        return ESP_ERR_INVALID_ARG;
+
     twai_onchip_node_config_t twai_config = {
         .io_cfg.tx = tx_pin,
         .io_cfg.rx = rx_pin,
@@ -31,7 +34,7 @@ esp_err_t hyInterfaceTWAISetup(
             .no_fd = 0,
             .dual_filter = 0};
 
-        err = twai_node_config_mask_filter(twai_handle, 0, &twai_maskfilt_config);
+        err = twai_node_config_mask_filter(*twai_handle, 0, &twai_maskfilt_config);
         if (err != ESP_OK)
         {
             twai_node_delete(*twai_handle);
