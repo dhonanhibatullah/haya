@@ -1,7 +1,6 @@
 #ifndef __HAYA_PERIPHERAL_ETH_H
 #define __HAYA_PERIPHERAL_ETH_H
 
-#include <string.h>
 #include "driver/spi_common.h"
 #include "driver/gpio.h"
 #include "esp_err.h"
