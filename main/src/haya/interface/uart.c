@@ -86,7 +86,10 @@ esp_err_t hayaInterfaceUARTSetup(
 
     err = uart_param_config(uart_port, &uart_config);
     if (err != ESP_OK)
+    {
+        uart_driver_delete(uart_port);
         return err;
+    }
 
     err = uart_set_pin(
         uart_port,
@@ -95,7 +98,10 @@ esp_err_t hayaInterfaceUARTSetup(
         rts_pin,
         cts_pin);
     if (err != ESP_OK)
+    {
+        uart_driver_delete(uart_port);
         return err;
+    }
 
     return ESP_OK;
 }

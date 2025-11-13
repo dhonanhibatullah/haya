@@ -33,7 +33,10 @@ esp_err_t hyInterfaceTWAISetup(
 
         err = twai_node_config_mask_filter(twai_handle, 0, &twai_maskfilt_config);
         if (err != ESP_OK)
+        {
+            twai_node_delete(*twai_handle);
             return err;
+        }
     }
 
     return ESP_OK;
