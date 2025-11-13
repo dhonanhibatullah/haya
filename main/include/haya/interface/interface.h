@@ -1,5 +1,5 @@
-#ifndef __INTERFACE_INTERFACE_H
-#define __INTERFACE_INTERFACE_H
+#ifndef __HAYA_INTERFACE_INTERFACE_H
+#define __HAYA_INTERFACE_INTERFACE_H
 
 #include "gpio.h"
 #include "i2c.h"
