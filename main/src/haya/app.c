@@ -32,6 +32,8 @@ HyAppHandle *hyAppNew(HyAppConfig *cfg)
     new->_cfg.priority = cfg->priority;
     new->_cfg.stack_size = cfg->stack_size;
     new->_cfg.sleep_tick = cfg->sleep_tick;
+    new->_cfg.post_setup_delay = cfg->post_setup_delay;
+    new->_cfg.pre_exit_delay = cfg->pre_exit_delay;
     new->_cfg.param = cfg->param;
     new->_cfg.exit_action = cfg->exit_action;
 
@@ -189,7 +191,7 @@ void _hyAppTaskWrapper(void *pvParameter)
     }
 
     if (h->_ok)
-        vTaskDelay(_HY_APP_AFTER_SETUP_DELAY);
+        vTaskDelay(h->_cfg.post_setup_delay);
 
     while (h->_ok)
     {
@@ -243,7 +245,7 @@ void _hyAppTaskWrapper(void *pvParameter)
     if (h->_cb.on_stopped != NULL)
         h->_cb.on_stopped(h->_cfg.param);
 
-    vTaskDelay(_HY_APP_EXIT_QUEUE_SEND_DELAY);
+    vTaskDelay(h->_cfg.pre_exit_delay);
     xQueueSend(_hy_app_exit_q, &h, 0);
     vTaskDelete(NULL);
 }

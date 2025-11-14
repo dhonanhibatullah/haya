@@ -30,17 +30,15 @@
  * @internal
  * @{
  */
-#define _HY_APP_START_TIMEOUT pdMS_TO_TICKS(1000)         /**< @brief Max time to wait for task to confirm it's running. */
-#define _HY_APP_AFTER_SETUP_DELAY pdMS_TO_TICKS(300)      /**< @brief Short delay after on_setup completes before on_loop. */
-#define _HY_APP_TOLERANCE_DELAY pdMS_TO_TICKS(1000)       /**< @brief Generic tolerance for state change confirmations. */
-#define _HY_APP_EXIT_QUEUE_SEND_DELAY pdMS_TO_TICKS(3000) /**< @brief Safe short delay before sending exit queue. */
-#define _HY_APP_EVENT_RUNNING_BIT (1 << 0)                /**< @brief Bit set by task when it's alive (cleared by start). */
-#define _HY_APP_EVENT_STOPPED_BIT (1 << 1)                /**< @brief Bit set by task just before it self-deletes. */
-#define _HY_APP_EVENT_PAUSED_BIT (1 << 2)                 /**< @brief Bit set by task when it enters the paused state. */
-#define _HY_APP_EVENT_RESUMED_BIT (1 << 3)                /**< @brief Bit set by task when it exits the paused state. */
-#define _HY_APP_EVENT_RESUME_CMD_BIT (1 << 4)             /**< @brief Bit set by hyAppResume() to command the task to resume. */
-#define _HY_APP_EXIT_QUEUE_LEN 2                          /**< @brief Max items in the global app exit queue. */
-#define _HY_APP_PASS_CODE 0xFFFFFFFF                      /**< @brief Pass return code for the app. */
+#define _HY_APP_START_TIMEOUT pdMS_TO_TICKS(1000)   /**< @brief Max time to wait for task to confirm it's running. */
+#define _HY_APP_TOLERANCE_DELAY pdMS_TO_TICKS(1000) /**< @brief Generic tolerance for state change confirmations. */
+#define _HY_APP_EVENT_RUNNING_BIT (1 << 0)          /**< @brief Bit set by task when it's alive (cleared by start). */
+#define _HY_APP_EVENT_STOPPED_BIT (1 << 1)          /**< @brief Bit set by task just before it self-deletes. */
+#define _HY_APP_EVENT_PAUSED_BIT (1 << 2)           /**< @brief Bit set by task when it enters the paused state. */
+#define _HY_APP_EVENT_RESUMED_BIT (1 << 3)          /**< @brief Bit set by task when it exits the paused state. */
+#define _HY_APP_EVENT_RESUME_CMD_BIT (1 << 4)       /**< @brief Bit set by hyAppResume() to command the task to resume. */
+#define _HY_APP_EXIT_QUEUE_LEN 2                    /**< @brief Max items in the global app exit queue. */
+#define _HY_APP_PASS_CODE 0xFFFFFFFF                /**< @brief Pass return code for the app. */
 /** @} */
 
 /**
@@ -136,6 +134,8 @@ typedef struct
     HyAppPriority priority;      /**< @brief Task priority, see HyAppPriority. */
     size_t stack_size;           /**< @brief Stack size for the task, in bytes. */
     TickType_t sleep_tick;       /**< @brief Ticks to delay in the on_loop callback (vTaskDelay). */
+    TickType_t post_setup_delay; /**< @brief Ticks to delay between the setup and the loop.*/
+    TickType_t pre_exit_delay;   /**< @brief Ticks to delay between the loop and exit action.*/
     void *param;                 /**< @brief A user-defined parameter that will be passed
                                   * to all callbacks. */
     HyAppExitAction exit_action; /**< @brief Action to take after this task stops.
