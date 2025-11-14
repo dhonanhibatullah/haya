@@ -17,6 +17,14 @@ void coreSetup(Core *core)
         CORE_HANDLE_TAG,
         "log setup success");
 
+    if (!_hyAppInit())
+    {
+        hyLogError(
+            CORE_HANDLE_TAG,
+            "failed to initiate core app handle");
+        coreRestart(3000);
+    }
+
     coreInterfaceConfig(&core->interface);
     corePeripheralConfig(&core->peripheral);
 }
