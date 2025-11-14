@@ -16,7 +16,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup SPI2: %s, restarting device...",
+            "failed to setup SPI2: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -38,7 +38,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup SPI3: %s, restarting device...",
+            "failed to setup SPI3: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -60,7 +60,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup I2C0: %s, restarting device...",
+            "failed to setup I2C0: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -81,7 +81,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup I2C1: %s, restarting device...",
+            "failed to setup I2C1: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -109,7 +109,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup UART1: %s, restarting device...",
+            "failed to setup UART1: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -140,7 +140,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup UART2: %s, restarting device...",
+            "failed to setup UART2: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -173,7 +173,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup TWAI: %s, restarting device...",
+            "failed to setup TWAI: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -196,7 +196,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup GPIO0: %s, restarting device...",
+            "failed to setup GPIO0: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -216,7 +216,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup GPIO1: %s, restarting device...",
+            "failed to setup GPIO1: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -236,7 +236,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup GPIO2: %s, restarting device...",
+            "failed to setup GPIO2: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
@@ -256,7 +256,7 @@ void coreInterfaceConfig(CoreInterface *i)
     {
         hyLogError(
             CORE_INTERFACE_TAG,
-            "failed to setup GPIO3: %s, restarting device...",
+            "failed to setup GPIO3: %s",
             esp_err_to_name(err));
         goto restart_device;
     }
