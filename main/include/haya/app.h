@@ -40,7 +40,7 @@
 #define _HY_APP_EVENT_RESUMED_BIT (1 << 3)                /**< @brief Bit set by task when it exits the paused state. */
 #define _HY_APP_EVENT_RESUME_CMD_BIT (1 << 4)             /**< @brief Bit set by hyAppResume() to command the task to resume. */
 #define _HY_APP_EXIT_QUEUE_LEN 2                          /**< @brief Max items in the global app exit queue. */
-#define _HY_APP_PASS_CODE 0xFFFFFFFFF                     /**< @brief Pass return code for the app. */
+#define _HY_APP_PASS_CODE 0xFFFFFFFF                      /**< @brief Pass return code for the app. */
 /** @} */
 
 /**
