@@ -33,6 +33,7 @@ HyAppHandle *hyAppNew(HyAppConfig *cfg)
     new->_cfg.stack_size = cfg->stack_size;
     new->_cfg.sleep_tick = cfg->sleep_tick;
     new->_cfg.param = cfg->param;
+    new->_cfg.exit_action = cfg->exit_action;
 
     new->_cb.on_setup = NULL;
     new->_cb.on_loop = NULL;
