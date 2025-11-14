@@ -82,15 +82,18 @@ esp_err_t hyPeripheralSIMSetup(
         }
     }
 
-    bool pin_ok = false;
-    if (esp_modem_read_pin(*dce, &pin_ok) == ESP_OK && pin_ok == false)
+    if (pin == NULL)
     {
-        err = esp_modem_set_pin(*dce, pin);
-        if (err != ESP_OK)
+        bool pin_ok = false;
+        if (esp_modem_read_pin(*dce, &pin_ok) == ESP_OK && pin_ok == false)
         {
-            esp_netif_destroy(*netif);
-            *netif = NULL;
-            return err;
+            err = esp_modem_set_pin(*dce, pin);
+            if (err != ESP_OK)
+            {
+                esp_netif_destroy(*netif);
+                *netif = NULL;
+                return err;
+            }
         }
     }
 
