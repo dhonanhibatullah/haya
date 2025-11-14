@@ -27,6 +27,24 @@ void coreLoop(Core *core)
     while (1)
     {
         xQueueReceive(_hy_app_exit_q, &app_handle, portMAX_DELAY);
+
+        if (app_handle->_exit_code == 0)
+        {
+            hyLogInfo(
+                CORE_HANDLE_TAG,
+                "%s app exited with code %d",
+                app_handle->_cfg.name,
+                app_handle->_exit_code);
+        }
+        else
+        {
+            hyLogWarn(
+                CORE_HANDLE_TAG,
+                "%s app exited with code %d",
+                app_handle->_cfg.name,
+                app_handle->_exit_code);
+        }
+
         switch (app_handle->_cfg.exit_action)
         {
         case HY_APP_EXIT_ACTION_FREE:
