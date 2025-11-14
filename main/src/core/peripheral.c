@@ -8,6 +8,10 @@ void corePeripheralConfig(CorePeripheral *p)
     HyErr herr;
 
 #if PCG_NVS_ENABLE == 1
+#ifndef PERIPHERAL_USED
+#define PERIPHERAL_USED
+#endif
+
 #if PCG_NVS_RESET == 1
     err = hyPeripheralNVSReset();
     if (err != ESP_OK)
@@ -40,6 +44,10 @@ void corePeripheralConfig(CorePeripheral *p)
 #endif
 
 #if PCG_LFS_ENABLE == 1
+#ifndef PERIPHERAL_USED
+#define PERIPHERAL_USED
+#endif
+
     err = hyPeripheralLFSSetup(
         PCG_LFS_BASE_PATH,
         PCG_LFS_PARTITION_LABEL,
@@ -58,6 +66,10 @@ void corePeripheralConfig(CorePeripheral *p)
 #endif
 
 #if PCG_SD_ENABLE == 1
+#ifndef PERIPHERAL_USED
+#define PERIPHERAL_USED
+#endif
+
     err = hyPeripheralSDSetup(
         &p->sd_card,
         PCG_SD_SPI_HOST,
@@ -79,6 +91,10 @@ void corePeripheralConfig(CorePeripheral *p)
         "SD setup success");
 
 #if PCG_SD_LOG_SAVE_ENABLE == 1
+#ifndef PERIPHERAL_USED
+#define PERIPHERAL_USED
+#endif
+
     herr = hyLogSaveEnable(
         PCG_SD_LOG_SAVE_DIR_PATH,
         PCG_SD_LOG_SAVE_FILE_KEEP_NUM,
@@ -99,6 +115,10 @@ void corePeripheralConfig(CorePeripheral *p)
 #endif
 
 #if PCG_WIFI_ENABLE == 1
+#ifndef PERIPHERAL_USED
+#define PERIPHERAL_USED
+#endif
+
     err = hyPeripheralWiFiSetup(
         p->nvs,
         &p->wifi_ap_netif,
@@ -120,6 +140,10 @@ void corePeripheralConfig(CorePeripheral *p)
 #endif
 
 #if PCG_ETH_ENABLE == 1
+#ifndef PERIPHERAL_USED
+#define PERIPHERAL_USED
+#endif
+
 #if PCG_ETH_TYPE == HY_PERIPHERAL_ETH_TYPE_W5500
     err = hyPeripheralEthW5500Setup(
         &p->eth_netif,
@@ -143,6 +167,10 @@ void corePeripheralConfig(CorePeripheral *p)
 #endif
 
 #if PCG_SIM_ENABLE == 1
+#ifndef PERIPHERAL_USED
+#define PERIPHERAL_USED
+#endif
+
     err = hyPeripheralSIMSetup(
         &p->sim_netif,
         &p->sim_dce,
@@ -169,10 +197,12 @@ void corePeripheralConfig(CorePeripheral *p)
 
     return;
 
+#ifdef PERIPHERAL_USED
 restart_device:
     hyLogWarn(
         CORE_PERIPHERAL_TAG,
         "restarting device in 3s...");
     vTaskDelay(pdMS_TO_TICKS(3000));
     esp_restart();
+#endif
 }

@@ -7,6 +7,10 @@ void coreInterfaceConfig(CoreInterface *i)
     esp_err_t err;
 
 #if ICG_SPI2_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hyInterfaceSPISetup(
         SPI2_HOST,
         ICG_SPI2_MOSI_PIN,
@@ -29,6 +33,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_SPI3_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hyInterfaceSPISetup(
         SPI3_HOST,
         ICG_SPI3_MOSI_PIN,
@@ -51,6 +59,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_I2C0_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hyInterfaceI2CSetup(
         &i->i2c0_handle,
         I2C_NUM_0,
@@ -72,6 +84,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_I2C1_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hyInterfaceI2CSetup(
         &i->i2c1_handle,
         I2C_NUM_1,
@@ -93,6 +109,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_UART1_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hayaInterfaceUARTSetup(
         UART_NUM_1,
         ICG_UART1_TYPE,
@@ -124,6 +144,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_UART2_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hayaInterfaceUARTSetup(
         UART_NUM_2,
         ICG_UART2_TYPE,
@@ -155,6 +179,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_TWAI_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
 #if ICG_TWAI_ENABLE_FILTER == 1
     uint32_t filt_id_list[] = ICG_TWAI_ID_LIST;
 #else
@@ -186,6 +214,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_GPIO0_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hyInterfaceGPIOSetup(
         ICG_GPIO0_PIN_MASK,
         ICG_GPIO0_MODE,
@@ -206,6 +238,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_GPIO1_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hyInterfaceGPIOSetup(
         ICG_GPIO1_PIN_MASK,
         ICG_GPIO1_MODE,
@@ -226,6 +262,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_GPIO2_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hyInterfaceGPIOSetup(
         ICG_GPIO2_PIN_MASK,
         ICG_GPIO2_MODE,
@@ -246,6 +286,10 @@ void coreInterfaceConfig(CoreInterface *i)
 #endif
 
 #if ICG_GPIO3_ENABLE == 1
+#ifndef INTERFACE_USED
+#define INTERFACE_USED
+#endif
+
     err = hyInterfaceGPIOSetup(
         ICG_GPIO3_PIN_MASK,
         ICG_GPIO3_MODE,
@@ -267,10 +311,12 @@ void coreInterfaceConfig(CoreInterface *i)
 
     return;
 
+#ifdef INTERFACE_USED
 restart_device:
     hyLogWarn(
         CORE_INTERFACE_TAG,
         "restarting device in 3s...");
     vTaskDelay(pdMS_TO_TICKS(3000));
     esp_restart();
+#endif
 }

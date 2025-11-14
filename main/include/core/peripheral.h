@@ -13,7 +13,7 @@
 
 /** @name NVS (Non-Volatile Storage) Configuration */
 ///@{
-#define PCG_NVS_ENABLE 1           ///< Set to 1 to enable NVS, 0 to disable.
+#define PCG_NVS_ENABLE 0           ///< Set to 1 to enable NVS, 0 to disable.
 #define PCG_NVS_NAMESPACE "/nvs"   ///< The default namespace to use for NVS operations.
 #define PCG_NVS_RESET_ON_FAIL true ///< Set to true to erase and re-init NVS if initialization fails.
 #define PCG_NVS_RESET 1            ///< Set to 1 to force-erase NVS on boot (for development).
@@ -21,7 +21,7 @@
 
 /** @name LittleFS Configuration */
 ///@{
-#define PCG_LFS_ENABLE 1                   ///< Set to 1 to enable LittleFS, 0 to disable.
+#define PCG_LFS_ENABLE 0                   ///< Set to 1 to enable LittleFS, 0 to disable.
 #define PCG_LFS_BASE_PATH "/lfs"           ///< The mount point for the LittleFS filesystem.
 #define PCG_LFS_PARTITION_LABEL "/storage" ///< The partition label in the partition table.
 #define PCG_LFS_FORMAT_ON_FAIL true        ///< Set to true to format the partition if mounting fails.
@@ -29,7 +29,7 @@
 
 /** @name SD Card (SPI) Configuration */
 ///@{
-#define PCG_SD_ENABLE 1                  ///< Set to 1 to enable the SD card, 0 to disable.
+#define PCG_SD_ENABLE 0                  ///< Set to 1 to enable the SD card, 0 to disable.
 #define PCG_SD_SPI_HOST SPI3_HOST        ///< The SPI host to use (e.g., SPI2_HOST or SPI3_HOST).
 #define PCG_SD_CS_PIN 13                 ///< GPIO pin for SD card Chip Select (CS).
 #define PCG_SD_BASE_PATH "/sd"           ///< The mount point for the SD card filesystem.
@@ -40,7 +40,7 @@
 
 /** @name SD Card Logger Configuration */
 ///@{
-#define PCG_SD_LOG_SAVE_ENABLE 1                                           ///< Set to 1 to enable saving `haya_log` output to the SD card.
+#define PCG_SD_LOG_SAVE_ENABLE 0                                           ///< Set to 1 to enable saving `haya_log` output to the SD card.
 #define PCG_SD_LOG_SAVE_DIR_PATH PCG_SD_BASE_PATH "/logs"                  ///< The directory on the SD card to save log files.
 #define PCG_SD_LOG_SAVE_FILE_KEEP_NUM 24 * 30                              ///< The number of log files to keep in rotation.
 #define PCG_SD_LOG_SAVE_FILE_ROTATION_PERIOD pdMS_TO_TICKS(1000 * 60 * 60) ///< The period, in ticks, to rotate to a new log file.
@@ -49,7 +49,7 @@
 
 /** @name WiFi Configuration */
 ///@{
-#define PCG_WIFI_ENABLE 1                       ///< Set to 1 to enable WiFi, 0 to disable.
+#define PCG_WIFI_ENABLE 0                       ///< Set to 1 to enable WiFi, 0 to disable.
 #define PCG_WIFI_DEFAULT_AP_SSID "HayaOS-AP"    ///< Default SSID for the WiFi Access Point.
 #define PCG_WIFI_DEFAULT_AP_PASS "Haya12345678" ///< Default password for the WiFi Access Point.
 #define PCG_WIFI_CHANNEL 1                      ///< Default WiFi channel (1-13).
@@ -58,7 +58,7 @@
 
 /** @name Ethernet (W5500) Configuration */
 ///@{
-#define PCG_ETH_ENABLE 1                          ///< Set to 1 to enable Ethernet, 0 to disable.
+#define PCG_ETH_ENABLE 0                          ///< Set to 1 to enable Ethernet, 0 to disable.
 #define PCG_ETH_TYPE HY_PERIPHERAL_ETH_TYPE_W5500 ///< Ethernet module type.
 #define PCG_ETH_SPI_HOST SPI2_HOST                ///< The SPI host to use for the Ethernet module.
 #define PCG_ETH_SPI_CLOCK_SPEED 20 * 1000 * 1000  ///< SPI clock speed (e.g., 20MHz).
@@ -69,7 +69,7 @@
 
 /** @name SIM Modem (SIM7000) Configuration */
 ///@{
-#define PCG_SIM_ENABLE 1                                ///< Set to 1 to enable the SIM modem, 0 to disable.
+#define PCG_SIM_ENABLE 0                                ///< Set to 1 to enable the SIM modem, 0 to disable.
 #define PCG_SIM_MODEM_DEVICE_TYPE ESP_MODEM_DCE_SIM7000 ///< The modem model (from esp_modem).
 #define PCG_SIM_APN "M2MAUTOTRONIC"                     ///< The Access Point Name (APN) for the SIM card.
 #define PCG_SIM_PIN NULL                                ///< The SIM card PIN (or NULL if no PIN).
