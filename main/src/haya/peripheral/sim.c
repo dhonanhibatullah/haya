@@ -85,7 +85,7 @@ esp_err_t hyPeripheralSIMSetup(
         }
     }
 
-    if (pin == NULL)
+    if (pin != NULL)
     {
         bool pin_ok = false;
         if (esp_modem_read_pin(*dce, &pin_ok) == ESP_OK && pin_ok == false)
