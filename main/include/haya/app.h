@@ -31,7 +31,7 @@
  * @{
  */
 #define _HY_APP_START_TIMEOUT pdMS_TO_TICKS(1000)         /**< @brief Max time to wait for task to confirm it's running. */
-#define _HY_APP_AFTER_SETUP_DELAY pdMS_TO_TICKS(1000)     /**< @brief Short delay after on_setup completes before on_loop. */
+#define _HY_APP_AFTER_SETUP_DELAY pdMS_TO_TICKS(300)      /**< @brief Short delay after on_setup completes before on_loop. */
 #define _HY_APP_TOLERANCE_DELAY pdMS_TO_TICKS(1000)       /**< @brief Generic tolerance for state change confirmations. */
 #define _HY_APP_EXIT_QUEUE_SEND_DELAY pdMS_TO_TICKS(3000) /**< @brief Safe short delay before sending exit queue. */
 #define _HY_APP_EVENT_RUNNING_BIT (1 << 0)                /**< @brief Bit set by task when it's alive (cleared by start). */
