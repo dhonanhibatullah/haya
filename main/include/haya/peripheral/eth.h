@@ -9,6 +9,11 @@
 #include "esp_eth_mac_w5500.h"
 #include "esp_eth_phy_w5500.h"
 
+typedef enum
+{
+    HY_PERIPHERAL_ETH_TYPE_W5500
+} HyPeripheralEthType;
+
 esp_err_t hyPeripheralEthW5500Setup(
     esp_netif_t **netif,
     spi_host_device_t spi_host,
