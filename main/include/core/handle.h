@@ -12,6 +12,7 @@
 typedef struct
 {
     CoreInterface *i;
+    CorePeripheral *p;
 } Core;
 
 void coreSetup(Core *core);

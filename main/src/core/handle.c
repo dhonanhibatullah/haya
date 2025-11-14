@@ -18,6 +18,7 @@ void coreSetup(Core *core)
         "log setup success");
 
     coreInterfaceConfig(core->i);
+    corePeripheralConfig(core->p);
 }
 
 void coreLoop(Core *core)
