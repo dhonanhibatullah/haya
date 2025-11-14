@@ -40,7 +40,7 @@ HyAppHandle *hyAppNew(HyAppConfig *cfg)
     new->_cb.on_resumed = NULL;
     new->_cb.on_stopped = NULL;
 
-    new->_exit_code = HY_APP_EXIT_CODE_NONE;
+    new->_exit_code = _HY_APP_PASS_CODE;
     new->_ok = false;
     new->_sus = false;
 
@@ -165,10 +165,10 @@ HyErr hyAppResume(HyAppHandle *h)
     return HY_ERR_NONE;
 }
 
-HyAppExitCode hyAppExitCode(HyAppHandle *h)
+int hyAppExitCode(HyAppHandle *h)
 {
     if (h == NULL)
-        return HY_APP_EXIT_CODE_NONE;
+        return _HY_APP_PASS_CODE;
 
     return h->_exit_code;
 }
@@ -183,7 +183,7 @@ void _hyAppTaskWrapper(void *pvParameter)
     if (h->_cb.on_setup != NULL)
     {
         h->_exit_code = h->_cb.on_setup(h->_cfg.param);
-        if (h->_exit_code != HY_APP_EXIT_CODE_NONE)
+        if (h->_exit_code != _HY_APP_PASS_CODE)
             h->_ok = false;
     }
 
@@ -226,7 +226,7 @@ void _hyAppTaskWrapper(void *pvParameter)
         if (h->_cb.on_loop != NULL)
         {
             h->_exit_code = h->_cb.on_loop(h->_cfg.param);
-            if (h->_exit_code != HY_APP_EXIT_CODE_NONE)
+            if (h->_exit_code != _HY_APP_PASS_CODE)
             {
                 h->_ok = false;
                 break;

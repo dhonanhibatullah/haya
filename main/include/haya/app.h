@@ -40,6 +40,7 @@
 #define _HY_APP_EVENT_RESUMED_BIT (1 << 3)                /**< @brief Bit set by task when it exits the paused state. */
 #define _HY_APP_EVENT_RESUME_CMD_BIT (1 << 4)             /**< @brief Bit set by hyAppResume() to command the task to resume. */
 #define _HY_APP_EXIT_QUEUE_LEN 2                          /**< @brief Max items in the global app exit queue. */
+#define _HY_APP_PASS_CODE 0xFFFFFFFFF                     /**< @brief Pass return code for the app. */
 /** @} */
 
 /**
@@ -77,25 +78,6 @@ typedef enum
 } HyAppPriority;
 
 /**
- * @brief Application exit codes.
- *
- * Callbacks (like on_setup, on_loop) can return these codes to
- * signal a fatal error and request the task to stop gracefully.
- */
-typedef enum
-{
-    HY_APP_EXIT_CODE_0,   /**< User-defined exit code 0 */
-    HY_APP_EXIT_CODE_1,   /**< User-defined exit code 1 */
-    HY_APP_EXIT_CODE_2,   /**< User-defined exit code 2 */
-    HY_APP_EXIT_CODE_3,   /**< User-defined exit code 3 */
-    HY_APP_EXIT_CODE_4,   /**< User-defined exit code 4 */
-    HY_APP_EXIT_CODE_5,   /**< User-defined exit code 5 */
-    HY_APP_EXIT_CODE_6,   /**< User-defined exit code 6 */
-    HY_APP_EXIT_CODE_7,   /**< User-defined exit code 7 */
-    HY_APP_EXIT_CODE_NONE /**< Special code: No error, continue running. */
-} HyAppExitCode;
-
-/**
  * @brief Defines the action to take after an app task exits.
  *
  * This is set in the HyAppConfig and processed by a manager task
@@ -120,7 +102,7 @@ typedef enum
  * @return A `HyAppExitCode`. Returning any value other than
  * `HY_APP_EXIT_CODE_NONE` will cause the task to stop.
  */
-typedef HyAppExitCode (*HyAppCallback)(void *arg);
+typedef int (*HyAppCallback)(void *arg);
 
 /**
  * @brief A callback function pointer that does not return a value.
@@ -208,13 +190,13 @@ typedef struct
  */
 typedef struct
 {
-    TaskHandle_t _th;                  /**< @internal Task handle for the application. */
-    EventGroupHandle_t _ev;            /**< @internal Event group for state synchronization. */
-    HyAppConfig _cfg;                  /**< @internal A copy of the user's configuration. */
-    HyAppCallbackGroup _cb;            /**< @internal A copy of the user's callbacks. */
-    volatile HyAppExitCode _exit_code; /**< @internal Stores the exit code returned by a callback. */
-    volatile bool _ok;                 /**< @internal Internal flag to control the main loop (true = run). */
-    volatile bool _sus;                /**< @internal Internal flag to control pause state (true = pause). */
+    TaskHandle_t _th;        /**< @internal Task handle for the application. */
+    EventGroupHandle_t _ev;  /**< @internal Event group for state synchronization. */
+    HyAppConfig _cfg;        /**< @internal A copy of the user's configuration. */
+    HyAppCallbackGroup _cb;  /**< @internal A copy of the user's callbacks. */
+    volatile int _exit_code; /**< @internal Stores the exit code returned by a callback. */
+    volatile bool _ok;       /**< @internal Internal flag to control the main loop (true = run). */
+    volatile bool _sus;      /**< @internal Internal flag to control pause state (true = pause). */
 
 } HyAppHandle;
 
@@ -315,11 +297,50 @@ HyErr hyAppResume(HyAppHandle *h);
  * `_app_exit_q`).
  *
  * @param h The application handle.
- * @return The `HyAppExitCode` returned by the callback that triggered
- * the stop, or `HY_APP_EXIT_CODE_NONE` if it was stopped
- * manually via `hyAppStop()`.
+ * @return The integer exit code returned by the callback that triggered
+ * the stop, or `_HY_APP_PASS_CODE` if it was stopped
+ * manually via `hyAppStop()` or exited normally.
  */
-HyAppExitCode hyAppExitCode(HyAppHandle *h);
+int hyAppExitCode(HyAppHandle *h);
+
+/**
+ * @brief Helper function to return a custom exit code from an app callback.
+ *
+ * Use this in `on_setup` or `on_loop` to stop the task and signal a
+ * specific error condition. Any return value other than the one
+ * from `hyAppPass()` will cause the task to stop.
+ *
+ * @code
+ * int my_loop(void* arg) {
+ * if (sensor_failed()) {
+ * return hyAppExit(12); // Return custom error code 12
+ * }
+ * return hyAppPass();
+ * }
+ * @endcode
+ *
+ * @param code The user-defined integer exit code.
+ * @return The same exit code.
+ */
+inline int hyAppExit(int code) { return code; }
+
+/**
+ * @brief Helper function to return the "pass" code from an app callback.
+ *
+ * This function signals that the callback completed successfully and the
+ * task should continue running. This is the only return value that
+ * will *not* stop the task.
+ *
+ * @code
+ * int my_loop(void* arg) {
+ * do_work();
+ * return hyAppPass(); // Continue running
+ * }
+ * @endcode
+ *
+ * @return The internal pass code (`_HY_APP_PASS_CODE`).
+ */
+inline int hyAppPass() { return _HY_APP_PASS_CODE; }
 
 /**
  * @internal

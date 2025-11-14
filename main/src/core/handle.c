@@ -38,7 +38,7 @@ void coreLoop(Core *core)
             break;
 
         case HY_APP_EXIT_ACTION_RESTART_UNLESS_STOPPED:
-            if (app_handle->_exit_code == HY_APP_EXIT_CODE_NONE)
+            if (app_handle->_exit_code == _HY_APP_PASS_CODE)
                 _coreFreeApp(app_handle);
             else
                 _coreRestartApp(app_handle);
@@ -82,7 +82,7 @@ void _coreRestartApp(HyAppHandle *app_handle)
         "restarting %s app...",
         app_handle->_cfg.name);
 
-    app_handle->_exit_code = HY_APP_EXIT_CODE_NONE;
+    app_handle->_exit_code = _HY_APP_PASS_CODE;
     xEventGroupClearBits(app_handle->_ev, _HY_APP_EVENT_STOPPED_BIT);
 
     HyErr err = hyAppStart(app_handle);
