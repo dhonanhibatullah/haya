@@ -13,6 +13,8 @@ HelloWorldApp *helloWorldAppNew()
         .stack_size = 4096,
         .priority = HY_APP_PRIORITY_MODERATE_0,
         .sleep_tick = pdMS_TO_TICKS(1000),
+        .post_setup_delay = pdMS_TO_TICKS(0),
+        .pre_exit_delay = pdMS_TO_TICKS(3000),
         .exit_action = HY_APP_EXIT_ACTION_RESTART_UNLESS_STOPPED,
         .param = new,
     };
