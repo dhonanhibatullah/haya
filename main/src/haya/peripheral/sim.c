@@ -12,7 +12,7 @@ esp_err_t hyPeripheralSIMSetup(
     int rx_pin,
     int baudrate)
 {
-    if (*netif == NULL || *dce == NULL || *apn == NULL)
+    if (*netif == NULL || *dce == NULL || apn == NULL)
         return ESP_ERR_INVALID_ARG;
 
     gpio_config_t io_conf = {
