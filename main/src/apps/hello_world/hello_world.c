@@ -56,7 +56,7 @@ int _helloWorldAppLoop(void *arg)
 
     app->hello_counter += 1;
     if (app->hello_counter == 5)
-        return hyAppExit(4);
+        return hyAppExit(0);
 
     return hyAppPass();
 }
