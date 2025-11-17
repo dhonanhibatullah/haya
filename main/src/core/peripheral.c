@@ -7,7 +7,7 @@ void corePeripheralConfig(CorePeripheral *p)
     esp_err_t err;
     HyErr herr;
     err = ESP_OK;
-    herr == HY_ERR_NONE;
+    herr = HY_ERR_NONE;
 
 #if PCG_NVS_ENABLE == 1
 #ifndef PERIPHERAL_USED
