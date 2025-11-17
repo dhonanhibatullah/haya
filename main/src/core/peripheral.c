@@ -118,14 +118,9 @@ void corePeripheralConfig(CorePeripheral *p)
 #ifndef PERIPHERAL_USED
 #define PERIPHERAL_USED
 #endif
-
     err = hyPeripheralWiFiSetup(
-        p->nvs,
         &p->wifi_ap_netif,
-        PCG_WIFI_DEFAULT_AP_SSID,
-        PCG_WIFI_DEFAULT_AP_PASS,
-        PCG_WIFI_CHANNEL,
-        PCG_WIFI_MAX_CONNECTION);
+        &p->wifi_sta_netif);
     if (err != ESP_OK)
     {
         hyLogError(

@@ -49,11 +49,7 @@
 
 /** @name WiFi Configuration */
 ///@{
-#define PCG_WIFI_ENABLE 0                       ///< Set to 1 to enable WiFi, 0 to disable.
-#define PCG_WIFI_DEFAULT_AP_SSID "HayaOS-AP"    ///< Default SSID for the WiFi Access Point.
-#define PCG_WIFI_DEFAULT_AP_PASS "Haya12345678" ///< Default password for the WiFi Access Point.
-#define PCG_WIFI_CHANNEL 1                      ///< Default WiFi channel (1-13).
-#define PCG_WIFI_MAX_CONNECTION 4               ///< Maximum allowed connections to the Access Point.
+#define PCG_WIFI_ENABLE 1 ///< Set to 1 to enable WiFi, 0 to disable.
 ///@}
 
 /** @name Ethernet (W5500) Configuration */
@@ -81,13 +77,6 @@
 ///@}
 
 /** @} */ // end of core_peripheral_cfg group
-
-/**
- * @brief Compile-time check to ensure NVS is enabled if WiFi is.
- */
-#if PCG_WIFI_ENABLE == 1 && PCG_NVS_ENABLE == 0
-#error "NVS must be enabled when WiFi is enabled"
-#endif
 
 /**
  * @brief A container for all initialized peripheral handles.
