@@ -6,7 +6,7 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
 {
     HyErr herr;
 
-#if PCG_WIFIMAN_ENABLE == 1
+#if SCG_WIFIMAN_ENABLE == 1
 #ifndef SERVICE_USED
 #define SERVICE_USED
 #endif
@@ -15,8 +15,8 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
         p->nvs,
         p->wifi_ap_netif,
         p->wifi_sta_netif,
-        PCG_WIFIMAN_DEFAULT_AP_SSID,
-        PCG_WIFIMAN_DEFAULT_AP_PASS);
+        SCG_WIFIMAN_DEFAULT_AP_SSID,
+        SCG_WIFIMAN_DEFAULT_AP_PASS);
     if (s->wifiman == NULL)
     {
         hyLogError(
@@ -34,6 +34,8 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
         goto restart_device;
     }
 #endif
+
+    return;
 
 #ifdef SERVICE_USED
 restart_device:
