@@ -114,6 +114,25 @@ void corePeripheralConfig(CorePeripheral *p)
 #endif
 #endif
 
+#if PCG_WIFI_ENABLE == 1 || PCG_ETH_ENABLE == 1 || PCG_SIM_ENABLE == 1
+#ifndef PERIPHERAL_USED
+#define PERIPHERAL_USED
+#endif
+
+    err = hyPeripheralNetifSetup();
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            CORE_PERIPHERAL_TAG,
+            "failed to setup netif: %s",
+            esp_err_to_name(err));
+        goto restart_device;
+    }
+    hyLogInfo(
+        CORE_PERIPHERAL_TAG,
+        "netif setup success");
+#endif
+
 #if PCG_WIFI_ENABLE == 1
 #ifndef PERIPHERAL_USED
 #define PERIPHERAL_USED
