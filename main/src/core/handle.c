@@ -27,6 +27,7 @@ void coreSetup(Core *core)
 
     coreInterfaceConfig(&core->interface);
     corePeripheralConfig(&core->peripheral);
+    coreServiceConfig(&core->service, &core->peripheral);
 }
 
 void coreLoop(Core *core)

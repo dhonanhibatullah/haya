@@ -18,6 +18,7 @@
 #include "haya/app.h"
 #include "interface.h"
 #include "peripheral.h"
+#include "service.h"
 
 /**
  * @brief The main application structure.
@@ -30,6 +31,7 @@ typedef struct
 {
     CoreInterface interface;   /**< @brief Holds all initialized interface handles (SPI, I2C, etc.). */
     CorePeripheral peripheral; /**< @brief Holds all initialized peripheral handles (NVS, SD, WiFi, etc.). */
+    CoreService service;       /**< @brief Holds all initialized service handles (Wifiman, Mqfastt, etc.). */
 } Core;
 
 /**
@@ -37,7 +39,7 @@ typedef struct
  *
  * This function must be called once at startup from `app_main`.
  * It initializes logging, the `haya_app` manager (including the exit queue),
- * and all hardware interfaces and peripherals based on their
+ * and all interfaces, peripherals, and services based on their
  * respective config files.
  *
  * @param core A pointer to the main Core struct to be populated.
