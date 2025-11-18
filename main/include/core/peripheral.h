@@ -13,7 +13,7 @@
 
 /** @name NVS (Non-Volatile Storage) Configuration */
 ///@{
-#define PCG_NVS_ENABLE 0           ///< Set to 1 to enable NVS, 0 to disable.
+#define PCG_NVS_ENABLE 1           ///< Set to 1 to enable NVS, 0 to disable.
 #define PCG_NVS_NAMESPACE "/nvs"   ///< The default namespace to use for NVS operations.
 #define PCG_NVS_RESET_ON_FAIL true ///< Set to true to erase and re-init NVS if initialization fails.
 #define PCG_NVS_RESET 1            ///< Set to 1 to force-erase NVS on boot (for development).

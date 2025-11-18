@@ -5,7 +5,6 @@ const char *CORE_INTERFACE_TAG = "core/interface";
 void coreInterfaceConfig(CoreInterface *i)
 {
     esp_err_t err;
-    err = ESP_OK;
 
 #if ICG_SPI2_ENABLE == 1
 #ifndef INTERFACE_USED
