@@ -12,18 +12,7 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
 #define SERVICE_USED
 #endif
 
-    httpd_config_t httpd_config = HTTPD_DEFAULT_CONFIG();
-    err = httpd_start(&s->server, &httpd_config);
-    if (err != ESP_OK)
-    {
-        hyLogError(
-            CORE_SERVICE_TAG,
-            "failed to start HTTP server: %s",
-            esp_err_to_name(err));
-        goto restart_device;
-    }
-
-    err = hyHttpServerSetup(s->server);
+    err = hyHttpServerSetup(&s->server, SCG_HTTP_SERVER_PORT);
     if (err != ESP_OK)
     {
         hyLogError(
