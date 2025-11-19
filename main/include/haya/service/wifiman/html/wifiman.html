@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 WiFi Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <div id="app">
+        <h3>WiFi Scanner</h3>
+        
+        <div id="controls">
+            <button id="btnScan" onclick="startScan()">Rescan WiFi</button>
+            <span id="scanStatus">Ready.</span>
+        </div>
+        <br>
+
+        <div id="wifiList">
+            <table border="1" cellpadding="5">
+                <thead>
+                    <tr>
+                        <th>SSID</th>
+                        <th>RSSI</th>
+                        <th>Auth</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="3">No data. Click Rescan.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <hr>
+
+        <div id="connectForm">
+            <h3>Connect</h3>
+            <div>
+                <label>SSID:</label><br>
+                <input type="text" id="inpSSID" placeholder="SSID Name">
+            </div>
+            <br>
+            <div>
+                <label>Password:</label><br>
+                <input type="password" id="inpPass" placeholder="Password">
+            </div>
+            <br>
+            <button id="btnConnect" onclick="doConnect()">Connect</button>
+            
+            <div id="connStatus" style="margin-top: 10px; font-weight: bold;">
+                Status: Idle
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Helper: Get Element by ID
+        const $ = (id) => document.getElementById(id);
+
+        // 1. Start Scan (Triggered on load & button click)
+        function startScan() {
+            $('scanStatus').innerText = "Starting scan...";
+            $('btnScan').disabled = true;
+
+            fetch('/wifiman/api/scan', { method: 'POST' })
+            .then(res => {
+                if (res.ok || res.status === 409) {
+                    $('scanStatus').innerText = "Scanning...";
+                    // Wait 2s then start polling
+                    setTimeout(pollScanResult, 2000);
+                } else {
+                    $('scanStatus').innerText = "Error starting scan.";
+                    $('btnScan').disabled = false;
+                }
+            })
+            .catch(e => {
+                $('scanStatus').innerText = "Req Failed";
+                $('btnScan').disabled = false;
+            });
+        }
+
+        // 2. Poll Scan Results
+        function pollScanResult() {
+            fetch('/wifiman/api/scanned')
+            .then(res => {
+                if (res.status === 409) {
+                    // Masih scanning, coba lagi dalam 2 detik
+                    $('scanStatus').innerText = "Still scanning...";
+                    setTimeout(pollScanResult, 2000);
+                } else if (res.ok) {
+                    return res.json();
+                } else {
+                    throw new Error(res.status);
+                }
+            })
+            .then(data => {
+                if (data) {
+                    renderTable(data);
+                    $('scanStatus').innerText = "Scan complete.";
+                    $('btnScan').disabled = false;
+                }
+            })
+            .catch(e => {
+                console.log(e);
+                // Jika error bukan 409, mungkin user mau coba lagi nanti
+                // Tapi untuk robustness, kita coba poll lagi sekali
+                // atau stop di sini. Kita stop saja agar tidak infinite loop error.
+                $('scanStatus').innerText = "Retry fetching...";
+                $('btnScan').disabled = false;
+            });
+        }
+
+        // Render JSON to Table
+        function renderTable(data) {
+            const tbody = $('tableBody');
+            tbody.innerHTML = "";
+            
+            if (data.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='3'>No AP found</td></tr>";
+                return;
+            }
+
+            data.forEach(ap => {
+                let row = document.createElement('tr');
+                // Klik baris untuk copy SSID
+                row.style.cursor = "pointer";
+                row.onclick = function() {
+                    $('inpSSID').value = ap.ssid;
+                    $('inpPass').focus();
+                };
+
+                row.innerHTML = `
+                    <td>${ap.ssid}</td>
+                    <td>${ap.rssi}</td>
+                    <td>${ap.auth}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 3. Connect Logic
+        function doConnect() {
+            const ssid = $('inpSSID').value;
+            const pass = $('inpPass').value;
+
+            if (!ssid) {
+                alert("SSID cannot be empty");
+                return;
+            }
+
+            $('btnConnect').disabled = true;
+            $('connStatus').innerText = "Sending credentials...";
+
+            const payload = { ssid: ssid, password: pass };
+
+            fetch('/wifiman/api/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) {
+                    $('connStatus').innerText = "Connecting...";
+                    // Poll connection status, start attempt 1 of 4
+                    setTimeout(() => pollConnectionStatus(1), 2000);
+                } else {
+                    $('connStatus').innerText = "Failed to send creds.";
+                    $('btnConnect').disabled = false;
+                }
+            })
+            .catch(e => {
+                $('connStatus').innerText = "Error Request.";
+                $('btnConnect').disabled = false;
+            });
+        }
+
+        // 4. Poll Connection Status (Max 4 times)
+        function pollConnectionStatus(attempt) {
+            fetch('/wifiman/api/connection')
+            .then(res => res.json())
+            .then(data => {
+                if (data.connected) {
+                    $('connStatus').innerText = "CONNECTED! IP: " + data.ip;
+                    $('btnConnect').disabled = false;
+                } else {
+                    if (attempt < 4) {
+                        $('connStatus').innerText = `Connecting... (${attempt}/4)`;
+                        setTimeout(() => pollConnectionStatus(attempt + 1), 2000);
+                    } else {
+                        $('connStatus').innerText = "Timeout/Failed. Check serial log.";
+                        $('btnConnect').disabled = false;
+                    }
+                }
+            })
+            .catch(e => {
+                $('connStatus').innerText = "Status Check Error";
+                $('btnConnect').disabled = false;
+            });
+        }
+
+        // Auto-start scan on load
+        window.onload = startScan;
+    </script>
+</body>
+</html>
