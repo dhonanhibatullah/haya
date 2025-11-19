@@ -53,7 +53,7 @@ typedef struct
 #endif
 
 #if SCG_WIFIMAN_ENABLE == 1
-    Wifiman *wifiman; /*!< @brief Handle/Pointer to the WiFi Manager service instance. */
+    HyWifiman *wifiman; /*!< @brief Handle/Pointer to the WiFi Manager service instance. */
 #endif
 
 #if SCG_MQTT_CLIENT_ENABLE == 1

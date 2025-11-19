@@ -33,7 +33,7 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
 #define SERVICE_USED
 #endif
 
-    s->wifiman = wifimanNew(
+    s->wifiman = hyWifimanNew(
         p->nvs,
         s->server,
         p->wifi_ap_netif,
@@ -48,7 +48,7 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
         goto restart_device;
     }
 
-    herr = wifimanStart(s->wifiman);
+    herr = hyWifimanStart(s->wifiman);
     if (herr != HY_ERR_NONE)
     {
         hyLogError(
