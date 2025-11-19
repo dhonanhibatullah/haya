@@ -22,9 +22,20 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
             esp_err_to_name(err));
         goto restart_device;
     }
+
+    err = hyHttpServerSetup(s->server);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            CORE_SERVICE_TAG,
+            "failed to setup HTTP server: %s",
+            esp_err_to_name(err));
+        goto restart_device;
+    }
+
     hyLogInfo(
         CORE_SERVICE_TAG,
-        "HTTP server started at port %d",
+        "HTTP server listening at port %d",
         SCG_HTTP_SERVER_PORT);
 #endif
 
@@ -47,18 +58,12 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
             "failed to create Wifiman");
         goto restart_device;
     }
-    herr = hyAppStart(s->wifiman->app_hdl);
+
+    herr = wifimanStart(s->wifiman);
     if (herr != HY_ERR_NONE)
     {
-        hyLogError(
-            CORE_SERVICE_TAG,
-            "failed to start Wifiman service: %s",
-            hyErrToStr(herr));
         goto restart_device;
     }
-    hyLogInfo(
-        CORE_SERVICE_TAG,
-        "Wifiman started");
 #endif
 
 #if SCG_MQTT_CLIENT_ENABLE == 1
