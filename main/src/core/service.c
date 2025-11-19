@@ -44,15 +44,23 @@ void coreServiceConfig(CoreService *s, CorePeripheral *p)
     {
         hyLogError(
             CORE_SERVICE_TAG,
-            "failed to create Wifiman");
+            "failed to create Wifiman service");
         goto restart_device;
     }
 
     herr = wifimanStart(s->wifiman);
     if (herr != HY_ERR_NONE)
     {
+        hyLogError(
+            CORE_SERVICE_TAG,
+            "failed to start Wifiman service: %s",
+            hyErrToStr(herr));
         goto restart_device;
     }
+
+    hyLogInfo(
+        CORE_SERVICE_TAG,
+        "Wifiman service started");
 #endif
 
 #if SCG_MQTT_CLIENT_ENABLE == 1
