@@ -16,6 +16,8 @@
     "*.inl": "cpp",
     "spi.h": "c",
     "log.h": "c",
-    "esp_wifi.h": "c"
+    "esp_wifi.h": "c",
+    "random": "c",
+    "app_handle.h": "c"
   }
 }
