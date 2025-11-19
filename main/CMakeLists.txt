@@ -24,3 +24,6 @@ idf_component_register(
         mqtt
         app_update
 )
+
+target_add_binary_data(${COMPONENT_TARGET} "include/haya/service/http_server/html/404_min.html" TEXT)
+target_add_binary_data(${COMPONENT_TARGET} "include/haya/service/wifiman/html/wifiman_min.html" TEXT)
