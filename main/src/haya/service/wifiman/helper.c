@@ -107,7 +107,7 @@ esp_err_t _hyWifimanNVSGetSTAConfig(HyWifiman *app, wifi_config_t *wifi_cfg)
     size_t pass_len;
 
     wifi_cfg->sta.threshold.authmode = WIFI_AUTH_OPEN;
-    wifi_cfg->sta.failure_retry_cnt = 3;
+    wifi_cfg->sta.failure_retry_cnt = 8;
 
     ssid_len = 32;
     esp_err_t err = nvs_get_str(app->nvs, WIFIMAN_STA_SSID_KEY, (char *)wifi_cfg->sta.ssid, &ssid_len);
@@ -174,6 +174,10 @@ esp_err_t _hyWifimanWiFiInit(HyWifiman *app)
             return err;
 
         err = esp_wifi_start();
+        if (err != ESP_OK)
+            return err;
+
+        err = esp_wifi_connect();
         if (err != ESP_OK)
             return err;
     }

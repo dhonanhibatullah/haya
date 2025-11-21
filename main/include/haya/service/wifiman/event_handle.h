@@ -8,6 +8,7 @@
 #include "nvs_flash.h"
 #include "haya/log.h"
 #include "types.h"
+#include "helper.h"
 
 esp_err_t _hyWifimanEventRegister(HyWifiman *app);
 
@@ -18,5 +19,7 @@ void _hyWifimanEventHandler(
     esp_event_base_t event_base,
     int32_t event_id,
     void *event_data);
+
+void _hyWifimanFallback(HyWifiman *app);
 
 #endif

@@ -26,6 +26,7 @@ typedef struct
     bool scanning;
     bool connecting;
     bool connected;
+    uint8_t reason;
 } HyWifiman;
 
 #endif

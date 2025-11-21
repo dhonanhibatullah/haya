@@ -60,7 +60,7 @@ void _hyWifimanEventHandler(
         {
             hyLogInfo(
                 WIFIMAN_EVENT_TAG,
-                "WiFi AP started");
+                "AP started");
             break;
         }
 
@@ -68,7 +68,7 @@ void _hyWifimanEventHandler(
         {
             hyLogWarn(
                 WIFIMAN_EVENT_TAG,
-                "WiFi AP stopped");
+                "AP stopped");
             break;
         }
 
@@ -100,7 +100,7 @@ void _hyWifimanEventHandler(
         {
             hyLogInfo(
                 WIFIMAN_EVENT_TAG,
-                "WiFi STA started");
+                "STA started");
             break;
         }
 
@@ -108,7 +108,7 @@ void _hyWifimanEventHandler(
         {
             hyLogWarn(
                 WIFIMAN_EVENT_TAG,
-                "WiFi STA stopped");
+                "STA stopped");
             break;
         }
 
@@ -116,10 +116,12 @@ void _hyWifimanEventHandler(
         {
             app->connecting = false;
             app->connected = true;
+            app->reason = 0;
+
             wifi_event_sta_connected_t *data = (wifi_event_sta_connected_t *)event_data;
             hyLogInfo(
                 WIFIMAN_EVENT_TAG,
-                "WiFi STA connected to %.*s",
+                "STA connected to %.*s",
                 data->ssid_len,
                 (char *)data->ssid);
             break;
@@ -129,13 +131,20 @@ void _hyWifimanEventHandler(
         {
             app->connecting = false;
             app->connected = false;
+
             wifi_event_sta_disconnected_t *data = (wifi_event_sta_disconnected_t *)event_data;
+            app->reason = data->reason;
             hyLogWarn(
                 WIFIMAN_EVENT_TAG,
-                "WiFi STA disconnected from %.*s, reason: %u",
+                "STA disconnected from %.*s, reason: %u",
                 data->ssid_len,
                 (char *)data->ssid,
                 data->reason);
+
+            wifi_mode_t mode;
+            esp_wifi_get_mode(&mode);
+            if (mode == WIFI_MODE_STA)
+                _hyWifimanFallback(app);
             break;
         }
 
@@ -174,4 +183,78 @@ void _hyWifimanEventHandler(
         }
         }
     }
+}
+
+void _hyWifimanFallback(HyWifiman *app)
+{
+    hyLogInfo(
+        WIFIMAN_EVENT_TAG,
+        "reverting to APSTA...");
+
+    wifi_config_t ap_cfg = {0};
+    wifi_config_t sta_cfg = {0};
+
+    esp_err_t err = _hyWifimanNVSGetAPConfig(app, &ap_cfg);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            WIFIMAN_EVENT_TAG,
+            "failed to get AP config: %s",
+            esp_err_to_name(err));
+        return;
+    }
+
+    err = _hyWifimanNVSGetSTAConfig(app, &sta_cfg);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            WIFIMAN_EVENT_TAG,
+            "failed to get STA config: %s",
+            esp_err_to_name(err));
+        return;
+    }
+
+    err = esp_wifi_set_mode(WIFI_MODE_APSTA);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            WIFIMAN_EVENT_TAG,
+            "failed to set APSTA mode: %s",
+            esp_err_to_name(err));
+        return;
+    }
+
+    err = esp_wifi_set_config(WIFI_IF_AP, &ap_cfg);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            WIFIMAN_EVENT_TAG,
+            "failed to set AP config: %s",
+            esp_err_to_name(err));
+        return;
+    }
+
+    err = esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            WIFIMAN_EVENT_TAG,
+            "failed to set STA config: %s",
+            esp_err_to_name(err));
+        return;
+    }
+
+    err = esp_wifi_connect();
+    if (err != ESP_OK)
+    {
+        hyLogError(
+            WIFIMAN_EVENT_TAG,
+            "failed to connect: %s",
+            esp_err_to_name(err));
+        return;
+    }
+
+    hyLogInfo(
+        WIFIMAN_EVENT_TAG,
+        "APSTA restart success");
 }

@@ -28,6 +28,7 @@ HyWifiman *hyWifimanNew(
     new->scanning = false;
     new->connecting = false;
     new->connected = false;
+    new->reason = 0;
 
     return new;
 }
