@@ -1,29 +1,27 @@
-file(GLOB_RECURSE srcsc "src/*.c")
+file(GLOB_RECURSE srcs "src/*.c" "src/*.cpp")
 idf_component_register(
     SRCS 
-        "src/main.c"
-        ${srcsc}
-    INCLUDE_DIRS 
+        "main.c"
+        ${srcs}
+    INCLUDE_DIRS
         "include"
     PRIV_REQUIRES
+        # built-in
         freertos
-        esp_driver_i2c
-        esp_driver_spi
-        esp_driver_uart
-        esp_driver_twai
-        esp_driver_gpio
-        fatfs
-        littlefs
+        spi_flash
         nvs_flash
-        esp_netif
+        driver
+        bt
+        esp_timer
         esp_wifi
-        esp_eth
-        w5500
+        esp_event
+        esp_netif
         esp_http_server
-        esp_http_client
-        mqtt
+        esp_https_ota
         app_update
+        mbedtls
+        json
+        # components
+        # idf components
+        esp_websocket_client
 )
-
-target_add_binary_data(${COMPONENT_TARGET} "include/haya/service/http_server/html/404_min.html" TEXT)
-target_add_binary_data(${COMPONENT_TARGET} "include/haya/service/wifiman/html/wifiman_min.html" TEXT)

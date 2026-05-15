@@ -1,0 +1,8 @@
+CompileFlags:
+  CompilationDatabase: build
+  BuiltinHeaders: QueryDriver
+  Remove:
+    - -mlongcalls
+    - -fno-tree-switch-conversion
+    - -fno-shrink-wrap
+    - -fstrict-volatile-bitfields
