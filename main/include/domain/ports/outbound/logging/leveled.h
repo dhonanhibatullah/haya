@@ -46,6 +46,7 @@ inline dpo_logging_leveled_t* dpo_logging_leveled_new(void* ctx) {
 }
 
 inline void dpo_logging_leveled_delete(dpo_logging_leveled_t* self) {
+    self->ctx = NULL;
     free(self);
 }
 

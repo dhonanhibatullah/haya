@@ -132,7 +132,7 @@ dpo_logging_leveled_t* adp_logging_leveled_stdio_impl_new(const adp_logging_leve
     if (!ctx) {
         return NULL;
     }
-    if (!cfg) {
+    if (cfg) {
         memcpy(&ctx->cfg, cfg, sizeof(adp_logging_leveled_stdio_impl_ctx_t));
     } else {
         ctx->cfg.level = DOMAIN_MODELS_LOG_LEVEL_INFO;
