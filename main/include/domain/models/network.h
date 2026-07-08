@@ -126,8 +126,6 @@ typedef struct {
     size_t                                  preferred_ipv6_count;
     dom_models_network_ipv6_addr_t          preferred_ipv6[DOM_MODELS_NETWORK_IPV6_MAX];
 
-    bool                                    io_driver_available;
-    uintptr_t                               io_driver_handle;
 } dom_models_network_interface_t;
 
 typedef struct {
