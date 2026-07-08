@@ -14,7 +14,9 @@ idf_component_register(
         driver
         bt
         esp_timer
+        esp_driver_spi
         esp_wifi
+        esp_eth
         esp_event
         esp_netif
         esp_http_server

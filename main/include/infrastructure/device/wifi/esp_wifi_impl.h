@@ -3,10 +3,9 @@
 
 #include <stdbool.h>
 
-#include "esp_event.h"
-
 #include "domain/contracts/device/wifi.h"
 #include "domain/models/wifi.h"
+#include "esp_event_base.h"
 
 #ifdef __cplusplus
 extern "C" {
