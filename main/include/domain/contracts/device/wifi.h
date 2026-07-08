@@ -40,10 +40,13 @@ struct dom_contracts_device_wifi_t {
     dom_models_error_t* (*stop_ap)(
         dom_contracts_device_wifi_t* self
     );
-    dom_models_error_t* (*scan)(
+    dom_models_error_t* (*start_scan)(
         dom_contracts_device_wifi_t*         self,
-        const dom_models_wifi_scan_config_t* config,
-        dom_models_wifi_scan_result_t*       out
+        const dom_models_wifi_scan_config_t* config
+    );
+    dom_models_error_t* (*get_scanned)(
+        dom_contracts_device_wifi_t*    self,
+        dom_models_wifi_scan_result_t*  out
     );
 };
 

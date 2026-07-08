@@ -142,11 +142,21 @@ typedef struct {
     uint32_t timeout_ms;
 } dom_models_wifi_scan_config_t;
 
+typedef enum {
+    DOM_MODELS_WIFI_SCAN_STATUS_IDLE = 0,
+    DOM_MODELS_WIFI_SCAN_STATUS_RUNNING,
+    DOM_MODELS_WIFI_SCAN_STATUS_DONE,
+    DOM_MODELS_WIFI_SCAN_STATUS_FAILED,
+} dom_models_wifi_scan_status_t;
+
 typedef struct {
-    size_t                      total_count;
-    size_t                      count;
-    bool                        truncated;
-    dom_models_wifi_ap_record_t records[DOM_MODELS_WIFI_SCAN_RESULT_MAX];
+    dom_models_wifi_scan_status_t status;
+    uint32_t                      scan_id;
+    uint32_t                      driver_status;
+    size_t                        total_count;
+    size_t                        count;
+    bool                          truncated;
+    dom_models_wifi_ap_record_t   records[DOM_MODELS_WIFI_SCAN_RESULT_MAX];
 } dom_models_wifi_scan_result_t;
 
 typedef struct {
