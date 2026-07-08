@@ -1,4 +1,5 @@
 file(GLOB_RECURSE srcs "src/*.c" "src/*.cpp")
+
 idf_component_register(
     SRCS 
         "main.c"
@@ -20,8 +21,13 @@ idf_component_register(
         esp_https_ota
         app_update
         mbedtls
-        json
+        mqtt
         # components
         # idf components
+        cjson
+        w5500
+        littlefs
         esp_websocket_client
 )
+
+target_compile_definitions(${COMPONENT_LIB} PRIVATE PROJECT_NAME="${APP_NAME}")

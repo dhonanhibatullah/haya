@@ -1,12 +1,4 @@
-.vscode/
-.agents/
-.codex/
-
-docs/.venv/
-docs/build/
-
 build/
 managed_components/
-sdkconfig
-sdkconfig.*
+sdkconfig*
 !sdkconfig.defaults

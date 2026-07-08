@@ -14,7 +14,8 @@ dependencies:
   #   # `public` flag doesn't have an effect dependencies of the `main` component.
   #   # All dependencies of `main` are public by default.
   #   public: true
-  # espressif/mpu6050: replaced by local components/mpu6050
-  # esp-idf-lib/hmc5883l: replaced by local components/hmc5883l
-  espp/filters: ^1.0.35
-  espressif/esp_websocket_client: '>=1.0.0'
+  espressif/w5500: ^2.0.0
+  espressif/esp_websocket_client: ^1.7.0
+  joltwallet/littlefs: ^1.22.2
+  espressif/cjson: ^1.7.19~2
+  espressif/mqtt: ^1.0.0
