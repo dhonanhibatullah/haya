@@ -31,6 +31,7 @@ typedef struct {
 
     uint16_t toggle_chr_hdl;
     uint16_t message_chr_hdl;
+    bool     initiated;
     bool     enabled;
 
     char     message[ADAPTERS_LOGGING_LEVELED_BLE_IMPL_MESSAGE_MAX_LEN];
@@ -42,8 +43,6 @@ dpo_logging_leveled_t* adp_logging_leveled_ble_impl_new(const adp_logging_levele
 void adp_logging_leveled_ble_impl_delete(dpo_logging_leveled_t* self);
 
 esp_err_t adp_logging_leveled_ble_impl_init(dpo_logging_leveled_t* self);
-
-void adp_logging_leveled_ble_impl_deinit(dpo_logging_leveled_t* self);
 
 #ifdef __cplusplus
 }
