@@ -1,15 +1,17 @@
 #ifndef DOMAIN_CONTRACTS_LOGGER_LEVELED_H
 #define DOMAIN_CONTRACTS_LOGGER_LEVELED_H
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct dom_contracts_logger_leveled_s dom_contracts_logger_leveled_t;
+typedef struct dom_contracts_logger_leveled_t dom_contracts_logger_leveled_t;
 
-typedef void (*dom_contracts_logger_leveled_cb)(void* cb_ctx, const char* msg);
+typedef void (*dom_contracts_logger_leveled_cb)(void* cb_ctx, const char* msg, size_t msg_len);
 
-struct dom_contracts_logger_leveled_s {
+struct dom_contracts_logger_leveled_t {
     void* ctx;
     void (*error)(
         dom_contracts_logger_leveled_t* self,
