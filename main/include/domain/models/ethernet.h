@@ -12,6 +12,12 @@ extern "C" {
 
 #define DOM_MODELS_ETHERNET_MAC_LEN 6
 
+#define DOM_MODELS_ETHERNET_CAPABILITY_SET_MAC         (1u << 0)
+#define DOM_MODELS_ETHERNET_CAPABILITY_LINK_CONFIG     (1u << 1)
+#define DOM_MODELS_ETHERNET_CAPABILITY_PROMISCUOUS     (1u << 2)
+#define DOM_MODELS_ETHERNET_CAPABILITY_FLOW_CONTROL    (1u << 3)
+#define DOM_MODELS_ETHERNET_CAPABILITY_PHY_LOOPBACK    (1u << 4)
+
 typedef enum {
     DOM_MODELS_ETHERNET_SPEED_UNKNOWN = 0,
     DOM_MODELS_ETHERNET_SPEED_10M,
@@ -24,6 +30,10 @@ typedef enum {
     DOM_MODELS_ETHERNET_DUPLEX_HALF,
     DOM_MODELS_ETHERNET_DUPLEX_FULL,
 } dom_models_ethernet_duplex_t;
+
+typedef struct {
+    uint32_t flags;
+} dom_models_ethernet_capabilities_t;
 
 typedef struct {
     bool    if_key_available;
@@ -45,8 +55,18 @@ typedef struct {
 
     bool                         duplex_available;
     dom_models_ethernet_duplex_t duplex;
+
+    bool promiscuous_available;
+    bool promiscuous;
+
+    bool flow_control_available;
+    bool flow_control;
+
+    bool phy_loopback_available;
+    bool phy_loopback;
 } dom_models_ethernet_status_t;
 
+/* If autoneg is true, speed and duplex are ignored. If false, both must be non-UNKNOWN. */
 typedef struct {
     bool                         autoneg;
     dom_models_ethernet_speed_t  speed;

@@ -21,6 +21,10 @@ struct dom_contracts_device_ethernet_t {
     dom_models_error_t* (*stop)(
         dom_contracts_device_ethernet_t* self
     );
+    dom_models_error_t* (*get_capabilities)(
+        dom_contracts_device_ethernet_t*    self,
+        dom_models_ethernet_capabilities_t* out
+    );
     dom_models_error_t* (*get_status)(
         dom_contracts_device_ethernet_t* self,
         dom_models_ethernet_status_t*    out
