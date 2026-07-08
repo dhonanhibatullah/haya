@@ -3,9 +3,10 @@
 
 #include <stdbool.h>
 
+#include "esp_event.h"
+
 #include "domain/contracts/device/wifi.h"
 #include "domain/models/wifi.h"
-#include "esp_event_base.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,7 @@ typedef struct {
 typedef struct {
     inf_device_wifi_esp_wifi_impl_cfg_t cfg;
     esp_event_handler_instance_t        wifi_event_handler;
+    bool                                wifi_initialized;
     bool                                wifi_event_handler_registered;
     bool                                started;
     bool                                sta_connected;
@@ -37,6 +39,10 @@ typedef struct {
 dom_contracts_device_wifi_t* inf_device_wifi_esp_wifi_impl_new(const inf_device_wifi_esp_wifi_impl_cfg_t* cfg);
 
 void inf_device_wifi_esp_wifi_impl_delete(dom_contracts_device_wifi_t* self);
+
+dom_models_error_t* inf_device_wifi_esp_wifi_impl_init(dom_contracts_device_wifi_t* self);
+
+dom_models_error_t* inf_device_wifi_esp_wifi_impl_deinit(dom_contracts_device_wifi_t* self);
 
 #ifdef __cplusplus
 }

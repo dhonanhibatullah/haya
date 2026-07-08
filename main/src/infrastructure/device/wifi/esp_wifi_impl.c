@@ -17,6 +17,7 @@
 
 static dom_models_error_t*              bad_argument_error(const char* msg);
 static dom_models_error_t*              error_from_esp(const char* action, esp_err_t err);
+static dom_models_error_t*              append_error_from_esp(dom_models_error_t* handle, const char* action, esp_err_t err);
 static size_t                           bounded_strlen(const char* value, size_t max_len);
 static size_t                           bounded_byte_strlen(const uint8_t* value, size_t max_len);
 static void                             copy_cstr(char* dst, size_t dst_size, const char* src);
@@ -104,26 +105,8 @@ dom_contracts_device_wifi_t* inf_device_wifi_esp_wifi_impl_new(const inf_device_
 
     ctx->scanned.status = DOM_MODELS_WIFI_SCAN_STATUS_IDLE;
 
-    if (ctx->cfg.register_event_handler) {
-        esp_err_t err = esp_event_handler_instance_register(
-            WIFI_EVENT,
-            ESP_EVENT_ANY_ID,
-            wifi_event_handler,
-            ctx,
-            &ctx->wifi_event_handler
-        );
-        if (err != ESP_OK) {
-            free(ctx);
-            return NULL;
-        }
-        ctx->wifi_event_handler_registered = true;
-    }
-
     dom_contracts_device_wifi_t* self = dom_contracts_device_wifi_new(ctx);
     if (!self) {
-        if (ctx->wifi_event_handler_registered) {
-            esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, ctx->wifi_event_handler);
-        }
         free(ctx);
         return NULL;
     }
@@ -149,12 +132,92 @@ void inf_device_wifi_esp_wifi_impl_delete(dom_contracts_device_wifi_t* self) {
 
     inf_device_wifi_esp_wifi_impl_ctx_t* ctx = self->ctx;
 
-    if (ctx->wifi_event_handler_registered) {
-        esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, ctx->wifi_event_handler);
-    }
+    dom_models_error_t* err = inf_device_wifi_esp_wifi_impl_deinit(self);
+    dom_models_error_delete(err);
 
     free(ctx);
     dom_contracts_device_wifi_delete(self);
+}
+
+dom_models_error_t* inf_device_wifi_esp_wifi_impl_init(dom_contracts_device_wifi_t* self) {
+    if (!self || !self->ctx) {
+        return bad_argument_error("missing wifi context");
+    }
+
+    inf_device_wifi_esp_wifi_impl_ctx_t* ctx = self->ctx;
+
+    if (ctx->wifi_initialized) {
+        return NULL;
+    }
+
+    wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
+
+    esp_err_t err = esp_wifi_init(&wifi_init_config);
+    if (err != ESP_OK) {
+        return error_from_esp("esp_wifi_init", err);
+    }
+    ctx->wifi_initialized = true;
+
+    if (ctx->cfg.register_event_handler) {
+        err = esp_event_handler_instance_register(
+            WIFI_EVENT,
+            ESP_EVENT_ANY_ID,
+            wifi_event_handler,
+            ctx,
+            &ctx->wifi_event_handler
+        );
+        if (err != ESP_OK) {
+            esp_wifi_deinit();
+            ctx->wifi_initialized = false;
+            return error_from_esp("esp_event_handler_instance_register", err);
+        }
+        ctx->wifi_event_handler_registered = true;
+    }
+
+    return NULL;
+}
+
+dom_models_error_t* inf_device_wifi_esp_wifi_impl_deinit(dom_contracts_device_wifi_t* self) {
+    if (!self || !self->ctx) {
+        return bad_argument_error("missing wifi context");
+    }
+
+    inf_device_wifi_esp_wifi_impl_ctx_t* ctx = self->ctx;
+    dom_models_error_t*                  err_handle = NULL;
+
+    if (ctx->started) {
+        esp_err_t err = esp_wifi_stop();
+        if (err != ESP_OK && err != ESP_ERR_WIFI_NOT_STARTED) {
+            err_handle = append_error_from_esp(err_handle, "esp_wifi_stop", err);
+        }
+    }
+
+    if (ctx->wifi_event_handler_registered) {
+        esp_err_t err = esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, ctx->wifi_event_handler);
+        if (err != ESP_OK) {
+            err_handle = append_error_from_esp(err_handle, "esp_event_handler_instance_unregister", err);
+        } else {
+            ctx->wifi_event_handler_registered = false;
+            ctx->wifi_event_handler            = NULL;
+        }
+    }
+
+    if (ctx->wifi_initialized) {
+        esp_err_t err = esp_wifi_deinit();
+        if (err != ESP_OK && err != ESP_ERR_WIFI_NOT_INIT) {
+            err_handle = append_error_from_esp(err_handle, "esp_wifi_deinit", err);
+        } else {
+            ctx->wifi_initialized = false;
+        }
+    }
+
+    ctx->started       = false;
+    ctx->sta_connected = false;
+    ctx->ap_started    = false;
+    memset(&ctx->scanned, 0, sizeof(dom_models_wifi_scan_result_t));
+    ctx->scanned.status = DOM_MODELS_WIFI_SCAN_STATUS_IDLE;
+
+    return err_handle;
 }
 
 /* Contract Function Implementations */
@@ -600,6 +663,18 @@ static dom_models_error_t* error_from_esp(const char* action, esp_err_t err) {
     }
 
     return dom_models_error_new(ESP_WIFI_IMPL_ACTOR, DOMAIN_MODELS_ERROR_TYPE_SYSTEM_FAILURE, "%s failed: esp_err=0x%x", action ? action : "esp_wifi", (unsigned int)err);
+}
+
+static dom_models_error_t* append_error_from_esp(dom_models_error_t* handle, const char* action, esp_err_t err) {
+    if (err == ESP_OK) {
+        return handle;
+    }
+
+    if (!handle) {
+        return error_from_esp(action, err);
+    }
+
+    return dom_models_error_append(handle, ESP_WIFI_IMPL_ACTOR, DOMAIN_MODELS_ERROR_TYPE_SYSTEM_FAILURE, "%s failed: esp_err=0x%x", action ? action : "esp_wifi", (unsigned int)err);
 }
 
 static size_t bounded_strlen(const char* value, size_t max_len) {
