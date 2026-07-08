@@ -48,6 +48,10 @@ static void add_callback_impl(
     void*                           cb_ctx,
     dom_contracts_logger_leveled_cb cb_func
 );
+static void remove_callback_impl(
+    dom_contracts_logger_leveled_t* self,
+    dom_contracts_logger_leveled_cb cb_func
+);
 
 /* Constructor and Destructor */
 
@@ -83,11 +87,12 @@ dom_contracts_logger_leveled_t* inf_logger_leveled_stdio_impl_new(const inf_logg
         return NULL;
     }
 
-    self->error        = error_impl;
-    self->warn         = warn_impl;
-    self->info         = info_impl;
-    self->debug        = debug_impl;
-    self->add_callback = add_callback_impl;
+    self->error           = error_impl;
+    self->warn            = warn_impl;
+    self->info            = info_impl;
+    self->debug           = debug_impl;
+    self->add_callback    = add_callback_impl;
+    self->remove_callback = remove_callback_impl;
 
     return self;
 }
@@ -201,6 +206,43 @@ static void add_callback_impl(
     ctx->cb_funcs[ctx->cb_idx] = cb_func;
     ctx->cb_ctxs[ctx->cb_idx]  = cb_ctx;
     ctx->cb_idx += 1;
+}
+
+static void remove_callback_impl(
+    dom_contracts_logger_leveled_t* self,
+    dom_contracts_logger_leveled_cb cb_func
+) {
+    if (!self || !self->ctx) {
+        return;
+    }
+
+    inf_logger_leveled_stdio_impl_ctx_t* ctx = self->ctx;
+
+    if (!ctx->cb_funcs || !ctx->cb_ctxs || !cb_func || ctx->cb_idx == 0) {
+        return;
+    }
+
+    for (unsigned int i = 0; i < ctx->cb_idx; i++) {
+        if (ctx->cb_funcs[i] != cb_func) {
+            continue;
+        }
+
+        unsigned int last_idx = ctx->cb_idx - 1;
+
+        ctx->cb_funcs[i] = NULL;
+        ctx->cb_ctxs[i]  = NULL;
+
+        if (i != last_idx) {
+            ctx->cb_funcs[i] = ctx->cb_funcs[last_idx];
+            ctx->cb_ctxs[i]  = ctx->cb_ctxs[last_idx];
+
+            ctx->cb_funcs[last_idx] = NULL;
+            ctx->cb_ctxs[last_idx]  = NULL;
+        }
+
+        ctx->cb_idx -= 1;
+        return;
+    }
 }
 
 /* Helper Function Implementations */

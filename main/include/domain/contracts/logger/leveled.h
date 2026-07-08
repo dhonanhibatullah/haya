@@ -42,6 +42,10 @@ struct dom_contracts_logger_leveled_t {
         void*                           cb_ctx,
         dom_contracts_logger_leveled_cb cb_func
     );
+    void (*remove_callback)(
+        dom_contracts_logger_leveled_t* self,
+        dom_contracts_logger_leveled_cb cb_func
+    );
 };
 
 dom_contracts_logger_leveled_t* dom_contracts_logger_leveled_new(void* ctx);
