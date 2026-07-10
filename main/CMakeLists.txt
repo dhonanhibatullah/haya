@@ -14,13 +14,18 @@ idf_component_register(
         driver
         bt
         esp_timer
+        esp_driver_gpio
+        esp_driver_i2c
         esp_driver_spi
+        esp_driver_sdspi
+        sdmmc
         esp_wifi
         esp_eth
         esp_event
         esp_netif
         esp_http_server
         esp_https_ota
+        fatfs
         app_update
         mbedtls
         mqtt
