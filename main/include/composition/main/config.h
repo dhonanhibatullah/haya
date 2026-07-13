@@ -5,12 +5,14 @@
 #include <stddef.h>   // IWYU pragma: keep
 #include <stdint.h>   // IWYU pragma: keep
 
-#include "hal/spi_types.h"  // IWYU pragma: keep
-#include "soc/gpio_num.h"   // IWYU pragma: keep
+#include "hal/gpio_types.h"  // IWYU pragma: keep
+#include "hal/spi_types.h"   // IWYU pragma: keep
+#include "soc/gpio_num.h"    // IWYU pragma: keep
 
 /* Driver Config Defines */
 
 #define COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE
+#define COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE
 #define COMPOSITION_MAIN_CONFIG_DRIVER_I2C_0_ENABLE
 #define COMPOSITION_MAIN_CONFIG_DRIVER_I2C_1_ENABLE
 #define COMPOSITION_MAIN_CONFIG_DRIVER_SPI_2_ENABLE
@@ -39,11 +41,26 @@ extern "C" {
 #endif
 
 typedef struct {
+    gpio_num_t      gpio_num;
+    gpio_mode_t     mode;
+    gpio_pullup_t   pull_up_en;
+    gpio_pulldown_t pull_down_en;
+    gpio_int_type_t intr_type;
+    bool            initial_output_level;
+} cmp_main_config_driver_gpio_t;
+
+typedef struct {
     struct driver {
         /* ISR */
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE
         const int isr_intr_alloc_flag;
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE */
+
+        /* GPIO */
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE
+        const cmp_main_config_driver_gpio_t* gpio_configs;
+        const size_t                         gpio_configs_cnt;
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE */
 
         /* I2C 0 */
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_I2C_0_ENABLE

@@ -19,6 +19,7 @@
 #include "esp_netif.h"                   // IWYU pragma: keep
 #include "esp_vfs_fat.h"                 // IWYU pragma: keep
 #include "esp_wifi.h"                    // IWYU pragma: keep
+#include "hal/gpio_types.h"              // IWYU pragma: keep
 #include "hal/i2c_types.h"               // IWYU pragma: keep
 #include "hal/spi_types.h"               // IWYU pragma: keep
 #include "nimble/nimble_port.h"          // IWYU pragma: keep
@@ -33,18 +34,14 @@
 
 /* Init Flags for Deinitizalization Sequence */
 
-static bool init_isr      = false;
-static bool init_i2c_0    = false;
-static bool init_i2c_1    = false;
-static bool init_spi_2    = false;
-static bool init_spi_3    = false;
-static bool init_nvs      = false;
-static bool init_littlefs = false;
-#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SD_CARD_ENABLE
-#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SD_CARD_USE_SDSPI
-static bool init_sd_card_sdspi = false;
-#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SD_CARD_USE_SDSPI */
-#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SD_CARD_ENABLE */
+static bool init_isr                = false;
+static bool init_i2c_0              = false;
+static bool init_i2c_1              = false;
+static bool init_spi_2              = false;
+static bool init_spi_3              = false;
+static bool init_nvs                = false;
+static bool init_littlefs           = false;
+static bool init_sd_card_sdspi      = false;
 static bool init_event_loop         = false;
 static bool init_netif              = false;
 static bool init_wifi               = false;
@@ -73,6 +70,41 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
     ESP_LOGI(tag, "ISR installed");
 
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE */
+
+    /* GPIO */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE
+
+    for (size_t i = 0; i < cmp_main_config.driver.gpio_configs_cnt; i++) {
+        const cmp_main_config_driver_gpio_t* gpio_cfg = &cmp_main_config.driver.gpio_configs[i];
+
+        gpio_config_t esp_gpio_cfg = {
+            .pin_bit_mask = 1ULL << gpio_cfg->gpio_num,
+            .mode         = gpio_cfg->mode,
+            .pull_up_en   = gpio_cfg->pull_up_en,
+            .pull_down_en = gpio_cfg->pull_down_en,
+            .intr_type    = gpio_cfg->intr_type,
+        };
+        err = gpio_config(&esp_gpio_cfg);
+        if (err != ESP_OK) {
+            ESP_LOGE(tag, "Failed to configure GPIO %d: %s", gpio_cfg->gpio_num, esp_err_to_name(err));
+            cmp_main_driver_deinit(launcher);
+            return DOMAIN_MODELS_ERROR_FAILURE;
+        }
+
+        if ((gpio_cfg->mode & GPIO_MODE_OUTPUT) != 0) {
+            err = gpio_set_level(gpio_cfg->gpio_num, gpio_cfg->initial_output_level);
+            if (err != ESP_OK) {
+                ESP_LOGE(tag, "Failed to set initial level for GPIO %d: %s", gpio_cfg->gpio_num, esp_err_to_name(err));
+                cmp_main_driver_deinit(launcher);
+                return DOMAIN_MODELS_ERROR_FAILURE;
+            }
+        }
+
+        ESP_LOGI(tag, "GPIO %d configured", gpio_cfg->gpio_num);
+    }
+
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE */
 
     /* I2C 0 */
 
@@ -410,18 +442,29 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
 }
 
 void cmp_main_driver_deinit(cmp_main_launcher_t* launcher) {
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
     if (init_mqtt_client) {
         init_mqtt_client = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE
     if (init_http_server) {
         init_http_server = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE
     if (init_ble) {
         ble_svc_gatt_deinit();
         ble_svc_gap_deinit();
         nimble_port_deinit();
         init_ble = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_ETHERNET_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_ETHERNET_USE_W5500
     if (init_ethernet_w5500) {
         esp_eth_driver_uninstall(launcher->driver.ethernet_w5500_handle);
         init_ethernet_w5500 = false;
@@ -434,18 +477,30 @@ void cmp_main_driver_deinit(cmp_main_launcher_t* launcher) {
         launcher->driver.ethernet_w5500_mac->del(launcher->driver.ethernet_w5500_mac);
         init_ethernet_w5500_mac = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_ETHERNET_USE_W5500 */
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_ETHERNET_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_WIFI_ENABLE
     if (init_wifi) {
         esp_wifi_deinit();
         init_wifi = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_NETIF_ENABLE
     if (init_netif) {
         esp_netif_deinit();
         init_netif = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_NETIF_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_EVENT_LOOP_ENABLE
     if (init_event_loop) {
         esp_event_loop_delete_default();
         init_event_loop = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_EVENT_LOOP_ENABLE */
+
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SD_CARD_ENABLE
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SD_CARD_USE_SDSPI
     if (init_sd_card_sdspi) {
@@ -457,32 +512,60 @@ void cmp_main_driver_deinit(cmp_main_launcher_t* launcher) {
     }
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SD_CARD_USE_SDSPI */
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SD_CARD_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_LITTLEFS_ENABLE
     if (init_littlefs) {
         esp_vfs_littlefs_unregister(cmp_main_config.driver.littlefs_partition_label);
         init_littlefs = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_LITTLEFS_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE
     if (init_nvs) {
         nvs_flash_deinit();
         init_nvs = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SPI_3_ENABLE
     if (init_spi_3) {
         spi_bus_free(SPI3_HOST);
         init_spi_3 = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SPI_3_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SPI_2_ENABLE
     if (init_spi_2) {
         spi_bus_free(SPI2_HOST);
         init_spi_2 = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SPI_2_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_I2C_1_ENABLE
     if (init_i2c_1) {
         i2c_del_master_bus(launcher->driver.i2c_1_bus_handle);
         init_i2c_1 = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_I2C_1_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_I2C_0_ENABLE
     if (init_i2c_0) {
         i2c_del_master_bus(launcher->driver.i2c_0_bus_handle);
         init_i2c_0 = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_I2C_0_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE
+    for (size_t i = 0; i < cmp_main_config.driver.gpio_configs_cnt; i++) {
+        const cmp_main_config_driver_gpio_t* gpio_cfg = &cmp_main_config.driver.gpio_configs[i];
+        gpio_reset_pin(gpio_cfg->gpio_num);
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE
     if (init_isr) {
         gpio_uninstall_isr_service();
         init_isr = false;
     }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE */
 }

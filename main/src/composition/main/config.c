@@ -1,7 +1,29 @@
 #include "composition/main/config.h"
 
-#include "hal/spi_types.h"  // IWYU pragma: keep
-#include "soc/gpio_num.h"   // IWYU pragma: keep
+#include "hal/gpio_types.h"  // IWYU pragma: keep
+#include "hal/spi_types.h"   // IWYU pragma: keep
+#include "soc/gpio_num.h"    // IWYU pragma: keep
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE
+static const cmp_main_config_driver_gpio_t cmp_main_gpio_configs[] = {
+    {
+        .gpio_num             = GPIO_NUM_32,
+        .mode                 = GPIO_MODE_INPUT,
+        .pull_up_en           = GPIO_PULLUP_ENABLE,
+        .pull_down_en         = GPIO_PULLDOWN_DISABLE,
+        .intr_type            = GPIO_INTR_DISABLE,
+        .initial_output_level = false,
+    },
+    {
+        .gpio_num             = GPIO_NUM_33,
+        .mode                 = GPIO_MODE_OUTPUT,
+        .pull_up_en           = GPIO_PULLUP_DISABLE,
+        .pull_down_en         = GPIO_PULLDOWN_DISABLE,
+        .intr_type            = GPIO_INTR_DISABLE,
+        .initial_output_level = false,
+    },
+};
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE */
 
 const cmp_main_config_t cmp_main_config = {
     .driver = {
@@ -9,6 +31,12 @@ const cmp_main_config_t cmp_main_config = {
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE
         .isr_intr_alloc_flag = 0,
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE */
+
+/* GPIO */
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE
+        .gpio_configs     = cmp_main_gpio_configs,
+        .gpio_configs_cnt = sizeof(cmp_main_gpio_configs) / sizeof(cmp_main_config_driver_gpio_t),
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE */
 
 /* I2C 0 */
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_I2C_0_ENABLE
