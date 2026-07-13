@@ -1,4 +1,9 @@
-file(GLOB_RECURSE srcs "src/*.c" "src/*.cpp")
+file(
+    GLOB_RECURSE srcs
+    CONFIGURE_DEPENDS
+    "src/*.c"
+    "src/*.cpp"
+)
 
 idf_component_register(
     SRCS 
