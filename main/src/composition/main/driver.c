@@ -1,6 +1,7 @@
 #include "composition/main/driver.h"  // IWYU pragma: keep
 
 #include "composition/main/config.h"     // IWYU pragma: keep
+#include "composition/main/preloaded.h"  // IWYU pragma: keep
 #include "domain/models/error.h"         // IWYU pragma: keep
 #include "driver/gpio.h"                 // IWYU pragma: keep
 #include "driver/i2c_master.h"           // IWYU pragma: keep
@@ -40,6 +41,7 @@ static bool init_i2c_1              = false;
 static bool init_spi_2              = false;
 static bool init_spi_3              = false;
 static bool init_nvs                = false;
+static bool init_preloaded          = false;
 static bool init_littlefs           = false;
 static bool init_sd_card_sdspi      = false;
 static bool init_event_loop         = false;
@@ -238,6 +240,24 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
     ESP_LOGI(tag, "NVS initialized");
 
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE */
+
+    /* Preloaded */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE
+    dom_models_error_t preloaded_err = cmp_main_preloaded_load_from_nvs(launcher->driver.nvs_handle);
+    if (preloaded_err != DOMAIN_MODELS_ERROR_OK) {
+        ESP_LOGE(tag, "Failed to load preloaded data from NVS: %s", dom_models_error_str(preloaded_err));
+        cmp_main_driver_deinit(launcher);
+        return preloaded_err;
+    }
+
+    ESP_LOGI(tag, "Preloaded data loaded from NVS");
+#else
+    cmp_main_preloaded_load_default();
+    ESP_LOGI(tag, "Preloaded data loaded from default values");
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE */
+
+    init_preloaded = true;
 
     /* LittleFS */
 
@@ -519,6 +539,11 @@ void cmp_main_driver_deinit(cmp_main_launcher_t* launcher) {
         init_littlefs = false;
     }
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_LITTLEFS_ENABLE */
+
+    if (init_preloaded) {
+        cmp_main_preloaded_free();
+        init_preloaded = false;
+    }
 
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE
     if (init_nvs) {
