@@ -35,6 +35,9 @@ extern "C" {
 #define DOM_MODELS_WIFI_PHY_FLAG_FTM_RESPONDER (1u << 8)
 #define DOM_MODELS_WIFI_PHY_FLAG_FTM_INITIATOR (1u << 9)
 
+#define DOM_MODELS_WIFI_STA_CREDENTIAL_SSID_KEY "wifi_sta_ssid"
+#define DOM_MODELS_WIFI_STA_CREDENTIAL_PASS_KEY "wifi_sta_pass"
+
 typedef enum {
     DOM_MODELS_WIFI_MODE_NULL = 0,
     DOM_MODELS_WIFI_MODE_STA,
@@ -97,6 +100,11 @@ typedef enum {
     DOM_MODELS_WIFI_SECOND_CHANNEL_BELOW,
     DOM_MODELS_WIFI_SECOND_CHANNEL_OTHER,
 } dom_models_wifi_second_channel_t;
+
+typedef struct {
+    char ssid[DOM_MODELS_WIFI_SSID_BUF_LEN];
+    char password[DOM_MODELS_WIFI_PASSWORD_BUF_LEN];
+} dom_models_wifi_sta_credential_t;
 
 typedef struct {
     bool                             bssid_available;

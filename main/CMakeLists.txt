@@ -1,6 +1,5 @@
 file(
     GLOB_RECURSE srcs
-    CONFIGURE_DEPENDS
     "src/*.c"
     "src/*.cpp"
 )
