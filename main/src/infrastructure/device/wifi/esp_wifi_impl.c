@@ -118,20 +118,12 @@ dom_models_error_t inf_device_wifi_esp_wifi_impl_init(dom_contracts_device_wifi_
 
     inf_device_wifi_esp_wifi_impl_ctx_t* ctx = self->ctx;
 
-    if (ctx->wifi_initialized) {
+    if (ctx->initialized) {
         return DOMAIN_MODELS_ERROR_OK;
     }
 
-    wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
-
-    esp_err_t err = esp_wifi_init(&wifi_init_config);
-    if (err != ESP_OK) {
-        return inf_device_wifi_esp_wifi_impl_error_from_esp(err);
-    }
-    ctx->wifi_initialized = true;
-
     if (ctx->cfg.register_event_handler) {
-        err = esp_event_handler_instance_register(
+        esp_err_t err = esp_event_handler_instance_register(
             WIFI_EVENT,
             ESP_EVENT_ANY_ID,
             wifi_event_handler,
@@ -139,12 +131,12 @@ dom_models_error_t inf_device_wifi_esp_wifi_impl_init(dom_contracts_device_wifi_
             &ctx->wifi_event_handler
         );
         if (err != ESP_OK) {
-            (void)esp_wifi_deinit();
-            ctx->wifi_initialized = false;
             return inf_device_wifi_esp_wifi_impl_error_from_esp(err);
         }
         ctx->wifi_event_handler_registered = true;
     }
+
+    ctx->initialized = true;
 
     return DOMAIN_MODELS_ERROR_OK;
 }
@@ -176,17 +168,7 @@ dom_models_error_t inf_device_wifi_esp_wifi_impl_deinit(dom_contracts_device_wif
         }
     }
 
-    if (ctx->wifi_initialized) {
-        esp_err_t err = esp_wifi_deinit();
-        if (err != ESP_OK && err != ESP_ERR_WIFI_NOT_INIT) {
-            if (result == DOMAIN_MODELS_ERROR_OK) {
-                result = inf_device_wifi_esp_wifi_impl_error_from_esp(err);
-            }
-        } else {
-            ctx->wifi_initialized = false;
-        }
-    }
-
+    ctx->initialized   = false;
     ctx->started       = false;
     ctx->sta_connected = false;
     ctx->ap_started    = false;

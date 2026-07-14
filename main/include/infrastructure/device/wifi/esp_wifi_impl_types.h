@@ -26,7 +26,7 @@ typedef struct {
 typedef struct {
     inf_device_wifi_esp_wifi_impl_cfg_t cfg;
     esp_event_handler_instance_t        wifi_event_handler;
-    bool                                wifi_initialized;
+    bool                                initialized;
     bool                                wifi_event_handler_registered;
     bool                                started;
     bool                                sta_connected;
