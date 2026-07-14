@@ -114,6 +114,8 @@ bool inf_device_wifi_esp_wifi_impl_wifi_mode_from_domain(dom_models_wifi_mode_t 
         case DOM_MODELS_WIFI_MODE_NAN:
             *out = WIFI_MODE_NAN;
             return true;
+        case DOM_MODELS_WIFI_MODE_OTHER:
+            return false;
     }
 
     return false;
@@ -132,7 +134,7 @@ dom_models_wifi_mode_t inf_device_wifi_esp_wifi_impl_wifi_mode_to_domain(wifi_mo
         case WIFI_MODE_NAN:
             return DOM_MODELS_WIFI_MODE_NAN;
         default:
-            return DOM_MODELS_WIFI_MODE_NULL;
+            return DOM_MODELS_WIFI_MODE_OTHER;
     }
 }
 
@@ -187,6 +189,7 @@ bool inf_device_wifi_esp_wifi_impl_wifi_auth_from_domain(dom_models_wifi_auth_mo
         case DOM_MODELS_WIFI_AUTH_WPA2_WPA3_ENTERPRISE:
             *out = WIFI_AUTH_WPA2_WPA3_ENTERPRISE;
             return true;
+        case DOM_MODELS_WIFI_AUTH_OTHER:
         case DOM_MODELS_WIFI_AUTH_UNKNOWN:
             return false;
     }
@@ -227,7 +230,7 @@ dom_models_wifi_auth_mode_t inf_device_wifi_esp_wifi_impl_wifi_auth_to_domain(wi
         case WIFI_AUTH_WPA2_WPA3_ENTERPRISE:
             return DOM_MODELS_WIFI_AUTH_WPA2_WPA3_ENTERPRISE;
         default:
-            return DOM_MODELS_WIFI_AUTH_UNKNOWN;
+            return DOM_MODELS_WIFI_AUTH_OTHER;
     }
 }
 
@@ -258,7 +261,7 @@ dom_models_wifi_cipher_t inf_device_wifi_esp_wifi_impl_wifi_cipher_to_domain(wif
         case WIFI_CIPHER_TYPE_AES_GMAC256:
             return DOM_MODELS_WIFI_CIPHER_AES_GMAC256;
         default:
-            return DOM_MODELS_WIFI_CIPHER_UNKNOWN;
+            return DOM_MODELS_WIFI_CIPHER_OTHER;
     }
 }
 
@@ -275,7 +278,7 @@ dom_models_wifi_bandwidth_t inf_device_wifi_esp_wifi_impl_wifi_bandwidth_to_doma
         case WIFI_BW80_BW80:
             return DOM_MODELS_WIFI_BANDWIDTH_80_80MHZ;
         default:
-            return DOM_MODELS_WIFI_BANDWIDTH_UNKNOWN;
+            return DOM_MODELS_WIFI_BANDWIDTH_OTHER;
     }
 }
 
@@ -286,8 +289,9 @@ dom_models_wifi_second_channel_t inf_device_wifi_esp_wifi_impl_wifi_second_chann
         case WIFI_SECOND_CHAN_BELOW:
             return DOM_MODELS_WIFI_SECOND_CHANNEL_BELOW;
         case WIFI_SECOND_CHAN_NONE:
-        default:
             return DOM_MODELS_WIFI_SECOND_CHANNEL_NONE;
+        default:
+            return DOM_MODELS_WIFI_SECOND_CHANNEL_OTHER;
     }
 }
 

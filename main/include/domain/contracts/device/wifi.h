@@ -28,6 +28,7 @@ struct dom_contracts_device_wifi_t {
         dom_contracts_device_wifi_t* self,
         dom_models_wifi_status_t*    out
     );
+    /* Starts a station connection attempt and returns after the driver accepts the request. */
     dom_models_error_t (*connect_sta)(
         dom_contracts_device_wifi_t*                self,
         const dom_models_wifi_sta_connect_config_t* config
@@ -42,6 +43,7 @@ struct dom_contracts_device_wifi_t {
     dom_models_error_t (*stop_ap)(
         dom_contracts_device_wifi_t* self
     );
+    /* Starts a scan request; use get_scanned() to observe completion and results. */
     dom_models_error_t (*start_scan)(
         dom_contracts_device_wifi_t*         self,
         const dom_models_wifi_scan_config_t* config

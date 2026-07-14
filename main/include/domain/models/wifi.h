@@ -11,11 +11,18 @@
 extern "C" {
 #endif
 
-#define DOM_MODELS_WIFI_MAC_LEN         6
-#define DOM_MODELS_WIFI_SSID_LEN        33
-#define DOM_MODELS_WIFI_PASSWORD_LEN    65
-#define DOM_MODELS_WIFI_SCAN_RESULT_MAX 16
-#define DOM_MODELS_WIFI_AP_CLIENT_MAX   8
+#define DOM_MODELS_WIFI_MAC_LEN          6
+#define DOM_MODELS_WIFI_SSID_MAX_LEN     32
+#define DOM_MODELS_WIFI_SSID_BUF_LEN     (DOM_MODELS_WIFI_SSID_MAX_LEN + 1)
+#define DOM_MODELS_WIFI_PASSWORD_MAX_LEN 64
+#define DOM_MODELS_WIFI_PASSWORD_BUF_LEN (DOM_MODELS_WIFI_PASSWORD_MAX_LEN + 1)
+#define DOM_MODELS_WIFI_SSID_LEN         DOM_MODELS_WIFI_SSID_BUF_LEN
+#define DOM_MODELS_WIFI_PASSWORD_LEN     DOM_MODELS_WIFI_PASSWORD_BUF_LEN
+#define DOM_MODELS_WIFI_SCAN_RESULT_MAX  16
+#define DOM_MODELS_WIFI_AP_CLIENT_MAX    8
+#define DOM_MODELS_WIFI_AP_DEFAULT_CHANNEL 1
+#define DOM_MODELS_WIFI_AP_DEFAULT_MAX_CLIENTS 4
+#define DOM_MODELS_WIFI_AP_DEFAULT_AUTH_MODE DOM_MODELS_WIFI_AUTH_WPA2_PSK
 
 #define DOM_MODELS_WIFI_PHY_FLAG_11B           (1u << 0)
 #define DOM_MODELS_WIFI_PHY_FLAG_11G           (1u << 1)
@@ -34,6 +41,7 @@ typedef enum {
     DOM_MODELS_WIFI_MODE_AP,
     DOM_MODELS_WIFI_MODE_APSTA,
     DOM_MODELS_WIFI_MODE_NAN,
+    DOM_MODELS_WIFI_MODE_OTHER,
 } dom_models_wifi_mode_t;
 
 typedef enum {
@@ -53,6 +61,7 @@ typedef enum {
     DOM_MODELS_WIFI_AUTH_DPP,
     DOM_MODELS_WIFI_AUTH_WPA3_ENTERPRISE,
     DOM_MODELS_WIFI_AUTH_WPA2_WPA3_ENTERPRISE,
+    DOM_MODELS_WIFI_AUTH_OTHER,
 } dom_models_wifi_auth_mode_t;
 
 typedef enum {
@@ -69,6 +78,7 @@ typedef enum {
     DOM_MODELS_WIFI_CIPHER_GCMP256,
     DOM_MODELS_WIFI_CIPHER_AES_GMAC128,
     DOM_MODELS_WIFI_CIPHER_AES_GMAC256,
+    DOM_MODELS_WIFI_CIPHER_OTHER,
 } dom_models_wifi_cipher_t;
 
 typedef enum {
@@ -78,18 +88,20 @@ typedef enum {
     DOM_MODELS_WIFI_BANDWIDTH_80MHZ,
     DOM_MODELS_WIFI_BANDWIDTH_160MHZ,
     DOM_MODELS_WIFI_BANDWIDTH_80_80MHZ,
+    DOM_MODELS_WIFI_BANDWIDTH_OTHER,
 } dom_models_wifi_bandwidth_t;
 
 typedef enum {
     DOM_MODELS_WIFI_SECOND_CHANNEL_NONE = 0,
     DOM_MODELS_WIFI_SECOND_CHANNEL_ABOVE,
     DOM_MODELS_WIFI_SECOND_CHANNEL_BELOW,
+    DOM_MODELS_WIFI_SECOND_CHANNEL_OTHER,
 } dom_models_wifi_second_channel_t;
 
 typedef struct {
     bool                             bssid_available;
     uint8_t                          bssid[DOM_MODELS_WIFI_MAC_LEN];
-    char                             ssid[DOM_MODELS_WIFI_SSID_LEN];
+    char                             ssid[DOM_MODELS_WIFI_SSID_BUF_LEN];
     uint8_t                          primary_channel;
     dom_models_wifi_second_channel_t second_channel;
     int8_t                           rssi;
@@ -107,30 +119,34 @@ typedef struct {
 } dom_models_wifi_ap_client_t;
 
 typedef struct {
-    char ssid[DOM_MODELS_WIFI_SSID_LEN];
-    char password[DOM_MODELS_WIFI_PASSWORD_LEN];
+    char ssid[DOM_MODELS_WIFI_SSID_BUF_LEN];
+    char password[DOM_MODELS_WIFI_PASSWORD_BUF_LEN];
 
     bool    bssid_set;
     uint8_t bssid[DOM_MODELS_WIFI_MAC_LEN];
 
     bool    channel_set;
     uint8_t channel;
-
-    uint32_t timeout_ms;
 } dom_models_wifi_sta_connect_config_t;
 
 typedef struct {
-    char                        ssid[DOM_MODELS_WIFI_SSID_LEN];
-    char                        password[DOM_MODELS_WIFI_PASSWORD_LEN];
-    uint8_t                     channel;
-    dom_models_wifi_auth_mode_t auth_mode;
-    uint8_t                     max_clients;
+    char                        ssid[DOM_MODELS_WIFI_SSID_BUF_LEN];
+    char                        password[DOM_MODELS_WIFI_PASSWORD_BUF_LEN];
     bool                        hidden;
+
+    bool    channel_set;
+    uint8_t channel;
+
+    bool                        auth_mode_set;
+    dom_models_wifi_auth_mode_t auth_mode;
+
+    bool    max_clients_set;
+    uint8_t max_clients;
 } dom_models_wifi_ap_config_t;
 
 typedef struct {
     bool ssid_set;
-    char ssid[DOM_MODELS_WIFI_SSID_LEN];
+    char ssid[DOM_MODELS_WIFI_SSID_BUF_LEN];
 
     bool    bssid_set;
     uint8_t bssid[DOM_MODELS_WIFI_MAC_LEN];

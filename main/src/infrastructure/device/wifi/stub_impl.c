@@ -102,7 +102,7 @@ void inf_device_wifi_stub_impl_delete(dom_contracts_device_wifi_t* self) {
 
 dom_models_error_t inf_device_wifi_stub_impl_init(dom_contracts_device_wifi_t* self) {
     if (!self || !self->ctx) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub context");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
@@ -113,7 +113,7 @@ dom_models_error_t inf_device_wifi_stub_impl_init(dom_contracts_device_wifi_t* s
 
 dom_models_error_t inf_device_wifi_stub_impl_deinit(dom_contracts_device_wifi_t* self) {
     if (!self || !self->ctx) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub context");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
@@ -130,7 +130,7 @@ static dom_models_error_t start_impl(
     dom_contracts_device_wifi_t* self
 ) {
     if (!self || !self->ctx) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub context");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
@@ -147,7 +147,7 @@ static dom_models_error_t stop_impl(
     dom_contracts_device_wifi_t* self
 ) {
     if (!self || !self->ctx) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub context");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
@@ -162,10 +162,10 @@ static dom_models_error_t set_mode_impl(
     dom_models_wifi_mode_t       mode
 ) {
     if (!self || !self->ctx) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub context");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
     if (!inf_device_wifi_stub_impl_valid_mode(mode)) {
-        return inf_device_wifi_stub_impl_bad_argument_error("invalid wifi stub mode");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
@@ -179,7 +179,7 @@ static dom_models_error_t get_status_impl(
     dom_models_wifi_status_t*    out
 ) {
     if (!self || !self->ctx || !out) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub status argument");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     static const uint8_t sta_mac[DOM_MODELS_WIFI_MAC_LEN]    = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
@@ -222,12 +222,19 @@ static dom_models_error_t connect_sta_impl(
     const dom_models_wifi_sta_connect_config_t* config
 ) {
     if (!self || !self->ctx || !config) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub sta config");
+        return inf_device_wifi_stub_impl_bad_argument_error();
+    }
+
+    if (inf_device_wifi_stub_impl_bounded_strlen(config->ssid, sizeof(config->ssid)) == 0) {
+        return inf_device_wifi_stub_impl_bad_argument_error();
+    }
+    if (config->channel_set && config->channel == 0) {
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx     = self->ctx;
-    const char*                      ssid    = inf_device_wifi_stub_impl_bounded_strlen(config->ssid, sizeof(config->ssid)) > 0 ? config->ssid : inf_device_wifi_stub_impl_default_ssid(ctx);
-    uint8_t                          channel = config->channel_set ? config->channel : 1;
+    const char*                      ssid    = config->ssid;
+    uint8_t                          channel = config->channel_set ? config->channel : DOM_MODELS_WIFI_AP_DEFAULT_CHANNEL;
 
     ctx->started   = true;
     ctx->connected = true;
@@ -247,7 +254,7 @@ static dom_models_error_t disconnect_sta_impl(
     dom_contracts_device_wifi_t* self
 ) {
     if (!self || !self->ctx) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub context");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
@@ -265,13 +272,27 @@ static dom_models_error_t start_ap_impl(
     const dom_models_wifi_ap_config_t* config
 ) {
     if (!self || !self->ctx || !config) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub ap config");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
-    inf_device_wifi_stub_impl_ctx_t* ctx       = self->ctx;
-    const char*                      ssid      = inf_device_wifi_stub_impl_bounded_strlen(config->ssid, sizeof(config->ssid)) > 0 ? config->ssid : inf_device_wifi_stub_impl_default_ssid(ctx);
-    uint8_t                          channel   = config->channel > 0 ? config->channel : 1;
-    dom_models_wifi_auth_mode_t      auth_mode = config->auth_mode == DOM_MODELS_WIFI_AUTH_UNKNOWN ? DOM_MODELS_WIFI_AUTH_WPA2_PSK : config->auth_mode;
+    if (inf_device_wifi_stub_impl_bounded_strlen(config->ssid, sizeof(config->ssid)) == 0) {
+        return inf_device_wifi_stub_impl_bad_argument_error();
+    }
+    if (config->channel_set && config->channel == 0) {
+        return inf_device_wifi_stub_impl_bad_argument_error();
+    }
+    if (config->max_clients_set && config->max_clients == 0) {
+        return inf_device_wifi_stub_impl_bad_argument_error();
+    }
+
+    dom_models_wifi_auth_mode_t auth_mode = config->auth_mode_set ? config->auth_mode : DOM_MODELS_WIFI_AP_DEFAULT_AUTH_MODE;
+    if (auth_mode == DOM_MODELS_WIFI_AUTH_UNKNOWN || auth_mode == DOM_MODELS_WIFI_AUTH_OTHER) {
+        return inf_device_wifi_stub_impl_bad_argument_error();
+    }
+
+    inf_device_wifi_stub_impl_ctx_t* ctx     = self->ctx;
+    const char*                      ssid    = config->ssid;
+    uint8_t                          channel = config->channel_set ? config->channel : DOM_MODELS_WIFI_AP_DEFAULT_CHANNEL;
 
     ctx->started    = true;
     ctx->ap_started = true;
@@ -291,7 +312,7 @@ static dom_models_error_t stop_ap_impl(
     dom_contracts_device_wifi_t* self
 ) {
     if (!self || !self->ctx) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub context");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
@@ -312,7 +333,7 @@ static dom_models_error_t start_scan_impl(
     const dom_models_wifi_scan_config_t* config
 ) {
     if (!self || !self->ctx) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub context");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx     = self->ctx;
@@ -339,7 +360,7 @@ static dom_models_error_t get_scanned_impl(
     dom_models_wifi_scan_result_t* out
 ) {
     if (!self || !self->ctx || !out) {
-        return inf_device_wifi_stub_impl_bad_argument_error("missing wifi stub scan result argument");
+        return inf_device_wifi_stub_impl_bad_argument_error();
     }
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;

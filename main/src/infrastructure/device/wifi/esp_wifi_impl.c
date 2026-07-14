@@ -317,6 +317,9 @@ static dom_models_error_t connect_sta_impl(
     if (inf_device_wifi_esp_wifi_impl_bounded_strlen(config->ssid, sizeof(config->ssid)) == 0) {
         return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
     }
+    if (config->channel_set && config->channel == 0) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
 
     esp_err_t err = inf_device_wifi_esp_wifi_impl_ensure_sta_mode();
     if (err != ESP_OK) {
@@ -378,9 +381,16 @@ static dom_models_error_t start_ap_impl(
     if (inf_device_wifi_esp_wifi_impl_bounded_strlen(config->ssid, sizeof(config->ssid)) == 0) {
         return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
     }
+    if (config->channel_set && config->channel == 0) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+    if (config->max_clients_set && config->max_clients == 0) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
 
-    wifi_auth_mode_t auth_mode;
-    if (!inf_device_wifi_esp_wifi_impl_wifi_auth_from_domain(config->auth_mode, &auth_mode)) {
+    dom_models_wifi_auth_mode_t domain_auth_mode = config->auth_mode_set ? config->auth_mode : DOM_MODELS_WIFI_AP_DEFAULT_AUTH_MODE;
+    wifi_auth_mode_t            auth_mode;
+    if (!inf_device_wifi_esp_wifi_impl_wifi_auth_from_domain(domain_auth_mode, &auth_mode)) {
         return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
     }
 
@@ -395,9 +405,9 @@ static dom_models_error_t start_ap_impl(
     inf_device_wifi_esp_wifi_impl_copy_cstr_to_bytes(wifi_config.ap.ssid, sizeof(wifi_config.ap.ssid), config->ssid);
     inf_device_wifi_esp_wifi_impl_copy_cstr_to_bytes(wifi_config.ap.password, sizeof(wifi_config.ap.password), config->password);
     wifi_config.ap.ssid_len       = (uint8_t)inf_device_wifi_esp_wifi_impl_bounded_strlen(config->ssid, sizeof(wifi_config.ap.ssid));
-    wifi_config.ap.channel        = config->channel;
+    wifi_config.ap.channel        = config->channel_set ? config->channel : DOM_MODELS_WIFI_AP_DEFAULT_CHANNEL;
     wifi_config.ap.authmode       = auth_mode;
-    wifi_config.ap.max_connection = config->max_clients;
+    wifi_config.ap.max_connection = config->max_clients_set ? config->max_clients : DOM_MODELS_WIFI_AP_DEFAULT_MAX_CLIENTS;
     wifi_config.ap.ssid_hidden    = config->hidden ? 1 : 0;
 
     err = esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
@@ -469,7 +479,7 @@ static dom_models_error_t start_scan_impl(
     wifi_scan_config_t scan_config;
     memset(&scan_config, 0, sizeof(wifi_scan_config_t));
 
-    uint8_t ssid[DOM_MODELS_WIFI_SSID_LEN];
+    uint8_t ssid[DOM_MODELS_WIFI_SSID_BUF_LEN];
     uint8_t bssid[DOM_MODELS_WIFI_MAC_LEN];
     memset(ssid, 0, sizeof(ssid));
     memset(bssid, 0, sizeof(bssid));

@@ -2,9 +2,7 @@
 
 #include <string.h>
 
-dom_models_error_t inf_device_wifi_stub_impl_bad_argument_error(const char* msg) {
-    (void)msg;
-
+dom_models_error_t inf_device_wifi_stub_impl_bad_argument_error(void) {
     return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
 }
 
@@ -16,6 +14,8 @@ bool inf_device_wifi_stub_impl_valid_mode(dom_models_wifi_mode_t mode) {
         case DOM_MODELS_WIFI_MODE_APSTA:
         case DOM_MODELS_WIFI_MODE_NAN:
             return true;
+        case DOM_MODELS_WIFI_MODE_OTHER:
+            return false;
     }
 
     return false;
