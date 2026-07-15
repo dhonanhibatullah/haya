@@ -2,36 +2,38 @@
 
 #include <string.h>  // IWYU pragma: keep
 
-#include "composition/main/config.h"     // IWYU pragma: keep
-#include "composition/main/preloaded.h"  // IWYU pragma: keep
-#include "domain/models/error.h"         // IWYU pragma: keep
-#include "driver/gpio.h"                 // IWYU pragma: keep
-#include "driver/i2c_master.h"           // IWYU pragma: keep
-#include "driver/sdspi_host.h"           // IWYU pragma: keep
-#include "driver/spi_common.h"           // IWYU pragma: keep
-#include "driver/spi_master.h"           // IWYU pragma: keep
-#include "esp_err.h"                     // IWYU pragma: keep
-#include "esp_eth_driver.h"              // IWYU pragma: keep
-#include "esp_eth_mac.h"                 // IWYU pragma: keep
-#include "esp_eth_mac_w5500.h"           // IWYU pragma: keep
-#include "esp_eth_phy.h"                 // IWYU pragma: keep
-#include "esp_eth_phy_w5500.h"           // IWYU pragma: keep
-#include "esp_event.h"                   // IWYU pragma: keep
-#include "esp_littlefs.h"                // IWYU pragma: keep
-#include "esp_log.h"                     // IWYU pragma: keep
-#include "esp_netif.h"                   // IWYU pragma: keep
-#include "esp_vfs_fat.h"                 // IWYU pragma: keep
-#include "esp_wifi.h"                    // IWYU pragma: keep
-#include "hal/gpio_types.h"              // IWYU pragma: keep
-#include "hal/i2c_types.h"               // IWYU pragma: keep
-#include "hal/spi_types.h"               // IWYU pragma: keep
-#include "nimble/nimble_port.h"          // IWYU pragma: keep
-#include "nvs.h"                         // IWYU pragma: keep
-#include "nvs_flash.h"                   // IWYU pragma: keep
-#include "sdmmc_cmd.h"                   // IWYU pragma: keep
-#include "services/gap/ble_svc_gap.h"    // IWYU pragma: keep
-#include "services/gatt/ble_svc_gatt.h"  // IWYU pragma: keep
-#include "soc/clk_tree_defs.h"           // IWYU pragma: keep
+#include "composition/main/config.h"          // IWYU pragma: keep
+#include "composition/main/preloaded.h"       // IWYU pragma: keep
+#include "domain/models/error.h"              // IWYU pragma: keep
+#include "driver/gpio.h"                      // IWYU pragma: keep
+#include "driver/i2c_master.h"                // IWYU pragma: keep
+#include "driver/sdspi_host.h"                // IWYU pragma: keep
+#include "driver/spi_common.h"                // IWYU pragma: keep
+#include "driver/spi_master.h"                // IWYU pragma: keep
+#include "esp_err.h"                          // IWYU pragma: keep
+#include "esp_eth_driver.h"                   // IWYU pragma: keep
+#include "esp_eth_mac.h"                      // IWYU pragma: keep
+#include "esp_eth_mac_w5500.h"                // IWYU pragma: keep
+#include "esp_eth_phy.h"                      // IWYU pragma: keep
+#include "esp_eth_phy_w5500.h"                // IWYU pragma: keep
+#include "esp_event.h"                        // IWYU pragma: keep
+#include "esp_littlefs.h"                     // IWYU pragma: keep
+#include "esp_log.h"                          // IWYU pragma: keep
+#include "esp_netif.h"                        // IWYU pragma: keep
+#include "esp_vfs_fat.h"                      // IWYU pragma: keep
+#include "esp_wifi.h"                         // IWYU pragma: keep
+#include "hal/gpio_types.h"                   // IWYU pragma: keep
+#include "hal/i2c_types.h"                    // IWYU pragma: keep
+#include "hal/spi_types.h"                    // IWYU pragma: keep
+#include "nimble/nimble_port.h"               // IWYU pragma: keep
+#include "nvs.h"                              // IWYU pragma: keep
+#include "nvs_flash.h"                        // IWYU pragma: keep
+#include "presentation/http/route/netif.h"    // IWYU pragma: keep
+#include "presentation/http/route/wifiman.h"  // IWYU pragma: keep
+#include "sdmmc_cmd.h"                        // IWYU pragma: keep
+#include "services/gap/ble_svc_gap.h"         // IWYU pragma: keep
+#include "services/gatt/ble_svc_gatt.h"       // IWYU pragma: keep
+#include "soc/clk_tree_defs.h"                // IWYU pragma: keep
 
 #define TAG_PATH "main"
 
@@ -464,8 +466,16 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
 
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE
 
-    httpd_config_t http_server_cfg = HTTPD_DEFAULT_CONFIG();
-    err                            = httpd_start(&launcher->driver.http_server_handle, &http_server_cfg);
+    httpd_config_t http_server_cfg   = HTTPD_DEFAULT_CONFIG();
+    http_server_cfg.max_uri_handlers = 0;
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE
+    http_server_cfg.max_uri_handlers += pres_http_route_netif_route_cnt();
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE */
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE
+    http_server_cfg.max_uri_handlers += pres_http_route_wifiman_route_cnt();
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE */
+
+    err = httpd_start(&launcher->driver.http_server_handle, &http_server_cfg);
     if (err != ESP_OK) {
         ESP_LOGE(tag, "Failed to start HTTP server: %s", esp_err_to_name(err));
         cmp_main_driver_deinit(launcher);
