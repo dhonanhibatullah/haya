@@ -18,6 +18,10 @@ static dom_models_error_t get_wifi_sta_impl(
     dom_contracts_network_interface_t* self,
     dom_models_network_interface_t*    out
 );
+static dom_models_error_t get_ethernet_impl(
+    dom_contracts_network_interface_t* self,
+    dom_models_network_interface_t*    out
+);
 
 /* Constructor and Destructor */
 
@@ -43,6 +47,7 @@ dom_contracts_network_interface_t* inf_network_interface_stub_impl_new(const inf
 
     self->get_all      = get_all_impl;
     self->get_wifi_sta = get_wifi_sta_impl;
+    self->get_ethernet = get_ethernet_impl;
 
     return self;
 }
@@ -88,4 +93,17 @@ static dom_models_error_t get_wifi_sta_impl(
     inf_network_interface_stub_impl_ctx_t* ctx = self->ctx;
 
     return inf_network_interface_stub_impl_find_wifi_sta(ctx, out);
+}
+
+static dom_models_error_t get_ethernet_impl(
+    dom_contracts_network_interface_t* self,
+    dom_models_network_interface_t*    out
+) {
+    if (!self || !self->ctx || !out) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    inf_network_interface_stub_impl_ctx_t* ctx = self->ctx;
+
+    return inf_network_interface_stub_impl_find_ethernet(ctx, out);
 }

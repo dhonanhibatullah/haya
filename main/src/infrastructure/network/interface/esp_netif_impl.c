@@ -19,6 +19,10 @@ static dom_models_error_t get_wifi_sta_impl(
     dom_contracts_network_interface_t* self,
     dom_models_network_interface_t*    out
 );
+static dom_models_error_t get_ethernet_impl(
+    dom_contracts_network_interface_t* self,
+    dom_models_network_interface_t*    out
+);
 
 /* Constructor and Destructor */
 
@@ -33,6 +37,9 @@ dom_contracts_network_interface_t* inf_network_interface_esp_netif_impl_new(cons
     if (!ctx->cfg.sta_if_key) {
         ctx->cfg.sta_if_key = default_cfg.sta_if_key;
     }
+    if (!ctx->cfg.eth_if_key) {
+        ctx->cfg.eth_if_key = default_cfg.eth_if_key;
+    }
 
     dom_contracts_network_interface_t* self = dom_contracts_network_interface_new(ctx);
     if (!self) {
@@ -42,6 +49,7 @@ dom_contracts_network_interface_t* inf_network_interface_esp_netif_impl_new(cons
 
     self->get_all      = get_all_impl;
     self->get_wifi_sta = get_wifi_sta_impl;
+    self->get_ethernet = get_ethernet_impl;
 
     return self;
 }
@@ -98,6 +106,28 @@ static dom_models_error_t get_wifi_sta_impl(
     memset(out, 0, sizeof(dom_models_network_interface_t));
 
     esp_netif_t* netif = esp_netif_get_handle_from_ifkey(ctx->cfg.sta_if_key);
+    if (!netif) {
+        return DOMAIN_MODELS_ERROR_NOT_FOUND;
+    }
+
+    inf_network_interface_esp_netif_impl_fill_interface(netif, out);
+
+    return DOMAIN_MODELS_ERROR_OK;
+}
+
+static dom_models_error_t get_ethernet_impl(
+    dom_contracts_network_interface_t* self,
+    dom_models_network_interface_t*    out
+) {
+    if (!self || !self->ctx || !out) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    inf_network_interface_esp_netif_impl_ctx_t* ctx = self->ctx;
+
+    memset(out, 0, sizeof(dom_models_network_interface_t));
+
+    esp_netif_t* netif = esp_netif_get_handle_from_ifkey(ctx->cfg.eth_if_key);
     if (!netif) {
         return DOMAIN_MODELS_ERROR_NOT_FOUND;
     }

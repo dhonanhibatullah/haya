@@ -39,6 +39,12 @@ dom_models_error_t inf_network_interface_stub_impl_load_cfg(
         return err;
     }
 
+    err = inf_network_interface_stub_impl_copy_cstr(ctx->eth_if_key, sizeof(ctx->eth_if_key), cfg->eth_if_key);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        inf_network_interface_stub_impl_clear(ctx);
+        return err;
+    }
+
     memcpy(&ctx->network, &cfg->network, sizeof(dom_models_network_t));
     normalize_network(&ctx->network);
 
@@ -66,6 +72,35 @@ dom_models_error_t inf_network_interface_stub_impl_find_wifi_sta(
     for (size_t i = 0; i < ctx->network.count; i++) {
         const dom_models_network_interface_t* current = &ctx->network.interfaces[i];
         if (current->type == DOM_MODELS_NETWORK_INTERFACE_TYPE_WIFI_STA) {
+            memcpy(out, current, sizeof(dom_models_network_interface_t));
+            return DOMAIN_MODELS_ERROR_OK;
+        }
+    }
+
+    return DOMAIN_MODELS_ERROR_NOT_FOUND;
+}
+
+dom_models_error_t inf_network_interface_stub_impl_find_ethernet(
+    const inf_network_interface_stub_impl_ctx_t* ctx,
+    dom_models_network_interface_t*              out
+) {
+    if (!ctx || !out) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    memset(out, 0, sizeof(dom_models_network_interface_t));
+
+    for (size_t i = 0; i < ctx->network.count; i++) {
+        const dom_models_network_interface_t* current = &ctx->network.interfaces[i];
+        if (strncmp(current->if_key, ctx->eth_if_key, sizeof(current->if_key)) == 0) {
+            memcpy(out, current, sizeof(dom_models_network_interface_t));
+            return DOMAIN_MODELS_ERROR_OK;
+        }
+    }
+
+    for (size_t i = 0; i < ctx->network.count; i++) {
+        const dom_models_network_interface_t* current = &ctx->network.interfaces[i];
+        if (current->type == DOM_MODELS_NETWORK_INTERFACE_TYPE_ETHERNET) {
             memcpy(out, current, sizeof(dom_models_network_interface_t));
             return DOMAIN_MODELS_ERROR_OK;
         }

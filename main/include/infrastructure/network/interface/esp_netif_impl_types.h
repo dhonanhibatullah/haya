@@ -7,11 +7,13 @@ extern "C" {
 
 typedef struct {
     const char* sta_if_key;
+    const char* eth_if_key;
 } inf_network_interface_esp_netif_impl_cfg_t;
 
 #define INF_NETWORK_INTERFACE_ESP_NETIF_IMPL_CFG_DEFAULT() \
     {                                                      \
         .sta_if_key = "WIFI_STA_DEF",                      \
+        .eth_if_key = "ETH_DEF",                           \
     }
 
 typedef struct {

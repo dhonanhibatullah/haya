@@ -149,6 +149,7 @@ dom_models_error_t cmp_main_infrastructure_init(cmp_main_launcher_t* launcher) {
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF
     inf_network_interface_esp_netif_impl_cfg_t network_interface_cfg = {
         .sta_if_key = cmp_main_config.infrastructure.network_interface_esp_netif_sta_if_key,
+        .eth_if_key = cmp_main_config.infrastructure.network_interface_esp_netif_eth_if_key,
     };
     launcher->infrastructure.network_interface = inf_network_interface_esp_netif_impl_new(&network_interface_cfg);
 #else

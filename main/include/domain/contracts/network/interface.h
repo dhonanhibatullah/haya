@@ -22,6 +22,10 @@ struct dom_contracts_network_interface_t {
         dom_contracts_network_interface_t* self,
         dom_models_network_interface_t*    out
     );
+    dom_models_error_t (*get_ethernet)(
+        dom_contracts_network_interface_t* self,
+        dom_models_network_interface_t*    out
+    );
 };
 
 static inline dom_contracts_network_interface_t* dom_contracts_network_interface_new(void* ctx) {

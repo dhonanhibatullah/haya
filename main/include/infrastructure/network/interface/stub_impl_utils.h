@@ -23,6 +23,11 @@ dom_models_error_t inf_network_interface_stub_impl_find_wifi_sta(
     dom_models_network_interface_t* out
 );
 
+dom_models_error_t inf_network_interface_stub_impl_find_ethernet(
+    const inf_network_interface_stub_impl_ctx_t* ctx,
+    dom_models_network_interface_t* out
+);
+
 void inf_network_interface_stub_impl_clear(inf_network_interface_stub_impl_ctx_t* ctx);
 
 #ifdef __cplusplus
