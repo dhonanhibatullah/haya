@@ -6,7 +6,7 @@ The project goal is currently empty
 
 This file describes the active project structure and the patterns that must be preserved when adding or changing features. The `Project Goals` section above is intentionally the first section so teams can reuse this repository as a template and replace only that section with project-specific goals.
 
-The active project lives under `main/include` and `main/src`. Do not treat `_main/` as active source unless a task explicitly asks to migrate or compare old code.
+The active project lives under `main/include` and `main/src`.
 
 ## Architecture Overview
 
