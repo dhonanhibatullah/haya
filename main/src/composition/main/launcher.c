@@ -8,6 +8,7 @@
 #include "composition/main/presentation.h"
 #include "composition/main/types.h"
 #include "domain/models/error.h"
+#include "domain/models/preloaded.h"
 #include "esp_log.h"
 
 #define TAG_PATH "main/launcher"
@@ -53,7 +54,7 @@ void cmp_main_launcher(void) {
 
     ESP_LOGI(tag, "Main composition initialized");
 
-    main_launcher.application.settings->restart(main_launcher.application.settings, 0xFFFFFFFF);
+    main_launcher.application.settings->restart(main_launcher.application.settings, dom_models_preloaded_data.system_restart_after_ms);
 
 fail:
     if (init_presentation) {

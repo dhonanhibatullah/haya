@@ -87,6 +87,14 @@ struct dom_contracts_repository_preloaded_t {
         dom_contracts_repository_preloaded_t* self,
         const char*                           value
     );
+    dom_models_error_t (*get_system_restart_after_ms)(
+        dom_contracts_repository_preloaded_t* self,
+        uint32_t*                             out
+    );
+    dom_models_error_t (*set_system_restart_after_ms)(
+        dom_contracts_repository_preloaded_t* self,
+        uint32_t                              value
+    );
 };
 
 static inline dom_contracts_repository_preloaded_t* dom_contracts_repository_preloaded_new(void* ctx) {

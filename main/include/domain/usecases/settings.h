@@ -36,7 +36,8 @@ typedef struct {
     dom_models_system_project_info_t project;
     dom_models_system_chip_info_t    chip;
 
-    bool restart_required;
+    uint32_t system_restart_after_ms;
+    bool     restart_required;
 } dom_usecases_settings_snapshot_t;
 
 typedef struct {
@@ -60,6 +61,9 @@ typedef struct {
 
     bool mqtt_pass_set;
     char mqtt_pass[DOM_USECASES_SETTINGS_MQTT_PASS_MAX_LEN];
+
+    bool     system_restart_after_ms_set;
+    uint32_t system_restart_after_ms;
 } dom_usecases_settings_preloaded_update_t;
 
 typedef struct dom_usecases_settings_t dom_usecases_settings_t;

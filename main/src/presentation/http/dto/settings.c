@@ -14,6 +14,7 @@
 
 static size_t bounded_strlen(const char* value, size_t max_len);
 static dom_models_error_t copy_optional_json_string(cJSON* json, const char* key, char* out, size_t out_size, bool* set);
+static dom_models_error_t copy_optional_json_uint32(cJSON* json, const char* key, uint32_t* out, bool* set);
 static cJSON* preloaded_to_json(const dom_usecases_settings_snapshot_t* snapshot);
 static cJSON* project_to_json(const dom_models_system_project_info_t* project);
 static cJSON* chip_to_json(const dom_models_system_chip_info_t* chip);
@@ -60,7 +61,12 @@ dom_models_error_t pres_http_dto_settings_parse_preloaded_update(
         return err;
     }
 
-    return copy_optional_json_string(json, "mqtt_pass", out->mqtt_pass, sizeof(out->mqtt_pass), &out->mqtt_pass_set);
+    err = copy_optional_json_string(json, "mqtt_pass", out->mqtt_pass, sizeof(out->mqtt_pass), &out->mqtt_pass_set);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    return copy_optional_json_uint32(json, "system_restart_after_ms", &out->system_restart_after_ms, &out->system_restart_after_ms_set);
 }
 
 cJSON* pres_http_dto_settings_snapshot_to_json(const dom_usecases_settings_snapshot_t* snapshot) {
@@ -171,6 +177,7 @@ static cJSON* preloaded_to_json(const dom_usecases_settings_snapshot_t* snapshot
     cJSON_AddStringToObject(root, "mqtt_port", snapshot->mqtt_port);
     cJSON_AddStringToObject(root, "mqtt_user", snapshot->mqtt_user);
     cJSON_AddStringToObject(root, "mqtt_pass", snapshot->mqtt_pass);
+    cJSON_AddNumberToObject(root, "system_restart_after_ms", snapshot->system_restart_after_ms);
 
     return root;
 }
@@ -202,4 +209,23 @@ static cJSON* chip_to_json(const dom_models_system_chip_info_t* chip) {
     cJSON_AddNumberToObject(root, "cores", chip->cores);
 
     return root;
+}
+
+static dom_models_error_t copy_optional_json_uint32(cJSON* json, const char* key, uint32_t* out, bool* set) {
+    if (!json || !key || !out || !set) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    cJSON* value = cJSON_GetObjectItemCaseSensitive(json, key);
+    if (!value) {
+        return DOMAIN_MODELS_ERROR_OK;
+    }
+    if (!cJSON_IsNumber(value)) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    *out = (uint32_t)value->valuedouble;
+    *set = true;
+
+    return DOMAIN_MODELS_ERROR_OK;
 }

@@ -96,6 +96,8 @@ dom_models_error_t inf_repository_preloaded_stub_impl_load_cfg(inf_repository_pr
         return err;
     }
 
+    ctx->system_restart_after_ms = cfg->system_restart_after_ms;
+
     return DOMAIN_MODELS_ERROR_OK;
 }
 

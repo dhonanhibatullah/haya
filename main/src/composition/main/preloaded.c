@@ -14,13 +14,14 @@
 
 /* Default Values */
 
-#define DEFAULT_WIFI_AP_SSID "haya"
-#define DEFAULT_WIFI_AP_PASS "12345678"
-#define DEFAULT_MQTT_PROTO   "mqtt"
-#define DEFAULT_MQTT_HOST    "192.168.1.1"
-#define DEFAULT_MQTT_PORT    "1883"
-#define DEFAULT_MQTT_USER    ""
-#define DEFAULT_MQTT_PASS    ""
+#define DEFAULT_WIFI_AP_SSID            "haya"
+#define DEFAULT_WIFI_AP_PASS            "12345678"
+#define DEFAULT_MQTT_PROTO              "mqtt"
+#define DEFAULT_MQTT_HOST               "192.168.1.1"
+#define DEFAULT_MQTT_PORT               "1883"
+#define DEFAULT_MQTT_USER               ""
+#define DEFAULT_MQTT_PASS               ""
+#define DEFAULT_SYSTEM_RESTART_AFTER_MS 0xFFFFFFFF
 
 #define DEVICE_ID_STR_LEN 12
 
@@ -109,6 +110,15 @@ dom_models_error_t cmp_main_preloaded_load_from_nvs(nvs_handle_t nvs) {
         return err;
     }
 
+    uint32_t  rst_aft_ms = DEFAULT_SYSTEM_RESTART_AFTER_MS;
+    esp_err_t nvs_err    = nvs_get_u32(nvs, DOMAIN_MODELS_PRELOADED_SYSTEM_RESTART_AFTER_MS_KEY, &rst_aft_ms);
+    if (nvs_err == ESP_OK) {
+        dom_models_preloaded_data.system_restart_after_ms = rst_aft_ms;
+    } else if (nvs_err != ESP_ERR_NVS_NOT_FOUND) {
+        clear_preloaded();
+        return error_from_esp(nvs_err);
+    }
+
 #ifdef COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
     err = apply_wifi_ap_ssid_device_id_suffix();
     if (err != DOMAIN_MODELS_ERROR_OK) {
@@ -164,7 +174,14 @@ static dom_models_error_t load_default(void) {
         return err;
     }
 
-    return load_string(&dom_models_preloaded_data.mqtt_pass, DEFAULT_MQTT_PASS);
+    err = load_string(&dom_models_preloaded_data.mqtt_pass, DEFAULT_MQTT_PASS);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    dom_models_preloaded_data.system_restart_after_ms = DEFAULT_SYSTEM_RESTART_AFTER_MS;
+
+    return DOMAIN_MODELS_ERROR_OK;
 }
 
 static dom_models_error_t load_device_id(void) {

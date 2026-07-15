@@ -13,6 +13,7 @@ extern "C" {
 #define DOMAIN_MODELS_PRELOADED_MQTT_PORT_KEY    "mqtt_port"
 #define DOMAIN_MODELS_PRELOADED_MQTT_USER_KEY    "mqtt_user"
 #define DOMAIN_MODELS_PRELOADED_MQTT_PASS_KEY    "mqtt_pass"
+#define DOMAIN_MODELS_PRELOADED_SYSTEM_RESTART_AFTER_MS_KEY "sys_rst_aft_ms"
 
 typedef struct {
     uint64_t device_id;
@@ -24,6 +25,7 @@ typedef struct {
     char*    mqtt_port;
     char*    mqtt_user;
     char*    mqtt_pass;
+    uint32_t system_restart_after_ms;
 } dom_models_preloaded_t;
 
 extern dom_models_preloaded_t dom_models_preloaded_data;

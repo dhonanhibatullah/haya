@@ -201,6 +201,15 @@ static dom_models_error_t set_preloaded_impl(
         ctx->restart_required = true;
     }
 
+    if (update->system_restart_after_ms_set) {
+        err = ctx->cfg.preloaded_repository->set_system_restart_after_ms(ctx->cfg.preloaded_repository, update->system_restart_after_ms);
+        if (err != DOMAIN_MODELS_ERROR_OK) {
+            ctx->cfg.logger->error(ctx->cfg.logger, tag, "Failed to set system restart after ms: %s (%d)", dom_models_error_str(err), (int)err);
+            return err;
+        }
+        ctx->restart_required = true;
+    }
+
     if (restart_required_out) {
         *restart_required_out = ctx->restart_required;
     }

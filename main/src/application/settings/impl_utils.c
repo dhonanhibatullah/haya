@@ -86,6 +86,11 @@ dom_models_error_t app_settings_impl_load_snapshot(
         return err;
     }
 
+    err = ctx->cfg.preloaded_repository->get_system_restart_after_ms(ctx->cfg.preloaded_repository, &out->system_restart_after_ms);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
     err = ctx->cfg.system_info->get_project_info(ctx->cfg.system_info, &out->project);
     if (err != DOMAIN_MODELS_ERROR_OK) {
         return err;
@@ -109,7 +114,8 @@ bool app_settings_impl_has_preloaded_update(const dom_usecases_settings_preloade
             update->mqtt_host_set ||
             update->mqtt_port_set ||
             update->mqtt_user_set ||
-            update->mqtt_pass_set);
+            update->mqtt_pass_set ||
+            update->system_restart_after_ms_set);
 }
 
 /* Helper Function Implementations */
@@ -131,7 +137,9 @@ static bool has_preloaded_repository_functions(dom_contracts_repository_preloade
            preloaded_repository->get_mqtt_user &&
            preloaded_repository->set_mqtt_user &&
            preloaded_repository->get_mqtt_pass &&
-           preloaded_repository->set_mqtt_pass;
+           preloaded_repository->set_mqtt_pass &&
+           preloaded_repository->get_system_restart_after_ms &&
+           preloaded_repository->set_system_restart_after_ms;
 }
 
 static bool has_system_info_functions(dom_contracts_system_info_t* system_info) {
