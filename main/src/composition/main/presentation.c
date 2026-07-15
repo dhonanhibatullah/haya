@@ -4,9 +4,12 @@
 #include "domain/models/error.h"                           // IWYU pragma: keep
 #include "esp_err.h"                                       // IWYU pragma: keep
 #include "esp_log.h"                                       // IWYU pragma: keep
+#include "mqtt_client.h"                                   // IWYU pragma: keep
 #include "presentation/http/route/netif.h"                 // IWYU pragma: keep
 #include "presentation/http/route/settings.h"              // IWYU pragma: keep
 #include "presentation/http/route/wifiman.h"               // IWYU pragma: keep
+#include "presentation/mqtt/context.h"                     // IWYU pragma: keep
+#include "presentation/mqtt/event/event_handler.h"         // IWYU pragma: keep
 #include "presentation/task/wifiman_sta_reconnect/task.h"  // IWYU pragma: keep
 
 #define TAG_PATH "main/presentation"
@@ -17,6 +20,7 @@ static bool init_netif_http_routes          = false;
 static bool init_settings_http_routes       = false;
 static bool init_wifiman_http_routes        = false;
 static bool init_wifiman_sta_reconnect_task = false;
+static bool init_mqtt_presentation          = false;
 
 dom_models_error_t cmp_main_presentation_init(cmp_main_launcher_t* launcher) {
     const char* tag = TAG_PATH "/init";
@@ -177,6 +181,57 @@ dom_models_error_t cmp_main_presentation_init(cmp_main_launcher_t* launcher) {
 
 #endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE */
 
+    /* MQTT Presentation */
+
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_MQTT_ENABLE
+
+#if !defined(COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE) ||   \
+    !defined(COMPOSITION_MAIN_CONFIG_APPLICATION_SETTINGS_ENABLE) || \
+    !defined(COMPOSITION_MAIN_CONFIG_APPLICATION_OTA_ENABLE)
+    ESP_LOGE(tag, "MQTT presentation dependencies are disabled");
+    cmp_main_presentation_deinit(launcher);
+    return DOMAIN_MODELS_ERROR_BAD_STATE;
+#else
+    if (!launcher->driver.mqtt_client_handle ||
+        !launcher->infrastructure.logger ||
+        !launcher->infrastructure.preloaded_repository ||
+        !launcher->application.settings ||
+        !launcher->application.ota) {
+        ESP_LOGE(tag, "MQTT presentation dependencies are not initialized");
+        cmp_main_presentation_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    launcher->presentation.mqtt_context = pres_mqtt_context_new(
+        launcher->infrastructure.logger,
+        launcher->infrastructure.preloaded_repository,
+        launcher->application.settings,
+        launcher->application.ota
+    );
+    if (!launcher->presentation.mqtt_context) {
+        ESP_LOGE(tag, "Failed to create MQTT context");
+        cmp_main_presentation_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    esp_err_t mqtt_handler_err = esp_mqtt_client_register_event(
+        launcher->driver.mqtt_client_handle,
+        ESP_EVENT_ANY_ID,
+        pres_mqtt_event_handler,
+        launcher->presentation.mqtt_context
+    );
+    if (mqtt_handler_err != ESP_OK) {
+        ESP_LOGE(tag, "Failed to register MQTT event handler: %s", esp_err_to_name(mqtt_handler_err));
+        cmp_main_presentation_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_FAILURE;
+    }
+
+    init_mqtt_presentation = true;
+    ESP_LOGI(tag, "MQTT presentation event handler registered");
+#endif /* MQTT presentation dependencies */
+
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_MQTT_ENABLE */
+
     return DOMAIN_MODELS_ERROR_OK;
 }
 
@@ -186,6 +241,23 @@ void cmp_main_presentation_deinit(cmp_main_launcher_t* launcher) {
     if (!launcher) {
         return;
     }
+
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_MQTT_ENABLE
+    if (init_mqtt_presentation) {
+        if (launcher->driver.mqtt_client_handle) {
+            esp_mqtt_client_unregister_event(
+                launcher->driver.mqtt_client_handle,
+                ESP_EVENT_ANY_ID,
+                pres_mqtt_event_handler
+            );
+        }
+        init_mqtt_presentation = false;
+    }
+    if (launcher->presentation.mqtt_context) {
+        pres_mqtt_context_delete(launcher->presentation.mqtt_context);
+        launcher->presentation.mqtt_context = NULL;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_MQTT_ENABLE */
 
 #ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE
     if (init_wifiman_sta_reconnect_task) {

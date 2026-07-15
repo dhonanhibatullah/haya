@@ -134,6 +134,7 @@ const cmp_main_config_t cmp_main_config = {
         .mqtt_client_lwt_msg              = "offline",
         .mqtt_client_lwt_qos              = 1,
         .mqtt_client_lwt_retain           = true,
+        .mqtt_client_buffer_size          = 4096,
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
     },
     .infrastructure = {

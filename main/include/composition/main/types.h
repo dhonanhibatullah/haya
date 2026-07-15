@@ -28,6 +28,7 @@
 #include "presentation/http/handler/settings_types.h"       // IWYU pragma: keep
 #include "presentation/http/handler/wifiman_types.h"        // IWYU pragma: keep
 #include "presentation/task/wifiman_sta_reconnect/types.h"  // IWYU pragma: keep
+#include "presentation/mqtt/context.h"                      // IWYU pragma: keep
 #include "sdmmc_cmd.h"                                      // IWYU pragma: keep
 
 #ifdef __cplusplus
@@ -153,6 +154,10 @@ typedef struct {
 #ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE
     pres_task_wifiman_sta_reconnect_t* wifiman_sta_reconnect_task;
 #endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_MQTT_ENABLE
+    pres_mqtt_context_t* mqtt_context;
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_MQTT_ENABLE */
 } cmp_main_presentation_t;
 
 typedef struct {

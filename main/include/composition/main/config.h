@@ -72,6 +72,7 @@
 #define COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_SETTINGS_ENABLE
 #define COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE
 #define COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE
+#define COMPOSITION_MAIN_CONFIG_PRESENTATION_MQTT_ENABLE
 
 #ifdef __cplusplus
 extern "C" {
@@ -184,6 +185,7 @@ typedef struct {
         const char* mqtt_client_lwt_msg;
         const int   mqtt_client_lwt_qos;
         const bool  mqtt_client_lwt_retain;
+        const int   mqtt_client_buffer_size;
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
     } driver;
 

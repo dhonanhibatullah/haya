@@ -514,6 +514,9 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
     mqtt_cfg.session.last_will.msg          = cmp_main_config.driver.mqtt_client_lwt_msg;
     mqtt_cfg.session.last_will.qos          = cmp_main_config.driver.mqtt_client_lwt_qos;
     mqtt_cfg.session.last_will.retain       = cmp_main_config.driver.mqtt_client_lwt_retain;
+    mqtt_cfg.buffer.size                    = cmp_main_config.driver.mqtt_client_buffer_size;
+    mqtt_cfg.buffer.out_size                = cmp_main_config.driver.mqtt_client_buffer_size;
+
 
     if (cmp_main_utils_cstr_available(dom_models_preloaded_data.mqtt_user)) {
         mqtt_cfg.credentials.username = dom_models_preloaded_data.mqtt_user;
