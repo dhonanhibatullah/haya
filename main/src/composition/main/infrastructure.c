@@ -1,0 +1,248 @@
+#include "composition/main/infrastructure.h"  // IWYU pragma: keep
+
+#include "composition/main/config.h"                          // IWYU pragma: keep
+#include "domain/models/error.h"                              // IWYU pragma: keep
+#include "domain/models/preloaded.h"                          // IWYU pragma: keep
+#include "esp_log.h"                                          // IWYU pragma: keep
+#include "infrastructure/device/wifi/esp_wifi_impl.h"         // IWYU pragma: keep
+#include "infrastructure/device/wifi/stub_impl.h"             // IWYU pragma: keep
+#include "infrastructure/logger/leveled/stdio_impl.h"         // IWYU pragma: keep
+#include "infrastructure/network/interface/esp_netif_impl.h"  // IWYU pragma: keep
+#include "infrastructure/network/interface/stub_impl.h"       // IWYU pragma: keep
+#include "infrastructure/repository/preloaded/nvs_impl.h"     // IWYU pragma: keep
+#include "infrastructure/repository/preloaded/stub_impl.h"    // IWYU pragma: keep
+#include "infrastructure/repository/wifi/nvs_impl.h"          // IWYU pragma: keep
+#include "infrastructure/repository/wifi/stub_impl.h"         // IWYU pragma: keep
+
+#define TAG_PATH "main/infrastructure"
+
+/* Init Flags for Deinitizalization Sequence */
+
+static bool init_logger               = false;
+static bool init_wifi                 = false;
+static bool init_network_interface    = false;
+static bool init_preloaded_repository = false;
+static bool init_wifi_repository      = false;
+
+dom_models_error_t cmp_main_infrastructure_init(cmp_main_launcher_t* launcher) {
+    const char* tag = TAG_PATH "/init";
+
+    if (!launcher) {
+        ESP_LOGE(tag, "Invalid launcher");
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    /* Logger */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE
+
+    inf_logger_leveled_stdio_impl_cfg_t logger_cfg = {
+        .level      = cmp_main_config.infrastructure.logger_leveled_stdio_level,
+        .cb_max_cnt = cmp_main_config.infrastructure.logger_leveled_stdio_callback_max_count,
+    };
+    launcher->infrastructure.logger = inf_logger_leveled_stdio_impl_new(&logger_cfg);
+    if (!launcher->infrastructure.logger) {
+        ESP_LOGE(tag, "Failed to create leveled stdio logger");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_logger = true;
+    ESP_LOGI(tag, "Leveled stdio logger created");
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE */
+
+    /* WiFi Device */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI
+    inf_device_wifi_esp_wifi_impl_cfg_t wifi_cfg = {
+        .sta_if_key             = cmp_main_config.infrastructure.wifi_esp_wifi_sta_if_key,
+        .ap_if_key              = cmp_main_config.infrastructure.wifi_esp_wifi_ap_if_key,
+        .register_event_handler = cmp_main_config.infrastructure.wifi_esp_wifi_register_event_handler,
+    };
+    launcher->infrastructure.wifi = inf_device_wifi_esp_wifi_impl_new(&wifi_cfg);
+#else
+    inf_device_wifi_stub_impl_cfg_t wifi_cfg = INF_DEVICE_WIFI_STUB_IMPL_CFG_DEFAULT();
+    launcher->infrastructure.wifi            = inf_device_wifi_stub_impl_new(&wifi_cfg);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI */
+
+    if (!launcher->infrastructure.wifi) {
+        ESP_LOGE(tag, "Failed to create WiFi device");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI
+    dom_models_error_t err = inf_device_wifi_esp_wifi_impl_init(launcher->infrastructure.wifi);
+#else
+    dom_models_error_t err = inf_device_wifi_stub_impl_init(launcher->infrastructure.wifi);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI */
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        ESP_LOGE(tag, "Failed to initialize WiFi device: %s", dom_models_error_str(err));
+        cmp_main_infrastructure_deinit(launcher);
+        return err;
+    }
+
+    init_wifi = true;
+    ESP_LOGI(tag, "WiFi device initialized");
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
+
+    /* Network Interface */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF
+    inf_network_interface_esp_netif_impl_cfg_t network_interface_cfg = {
+        .sta_if_key = cmp_main_config.infrastructure.network_interface_esp_netif_sta_if_key,
+    };
+    launcher->infrastructure.network_interface = inf_network_interface_esp_netif_impl_new(&network_interface_cfg);
+#else
+    inf_network_interface_stub_impl_cfg_t network_interface_cfg = INF_NETWORK_INTERFACE_STUB_IMPL_CFG_DEFAULT();
+    launcher->infrastructure.network_interface                  = inf_network_interface_stub_impl_new(&network_interface_cfg);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF */
+
+    if (!launcher->infrastructure.network_interface) {
+        ESP_LOGE(tag, "Failed to create network interface repository");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_network_interface = true;
+    ESP_LOGI(tag, "Network interface repository created");
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE */
+
+    /* Preloaded Repository */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE
+
+#if defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_USE_NVS) && defined(COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE)
+    inf_repository_preloaded_nvs_impl_cfg_t preloaded_repository_cfg = {
+        .nvs = launcher->driver.nvs_handle,
+    };
+    launcher->infrastructure.preloaded_repository = inf_repository_preloaded_nvs_impl_new(&preloaded_repository_cfg);
+#else
+    inf_repository_preloaded_stub_impl_cfg_t preloaded_repository_cfg = {
+        .device_id     = dom_models_preloaded_data.device_id,
+        .device_id_str = dom_models_preloaded_data.device_id_str,
+        .wifi_ap_ssid  = dom_models_preloaded_data.wifi_ap_ssid,
+        .wifi_ap_pass  = dom_models_preloaded_data.wifi_ap_pass,
+        .mqtt_proto    = dom_models_preloaded_data.mqtt_proto,
+        .mqtt_host     = dom_models_preloaded_data.mqtt_host,
+        .mqtt_port     = dom_models_preloaded_data.mqtt_port,
+        .mqtt_user     = dom_models_preloaded_data.mqtt_user,
+        .mqtt_pass     = dom_models_preloaded_data.mqtt_pass,
+    };
+    launcher->infrastructure.preloaded_repository = inf_repository_preloaded_stub_impl_new(&preloaded_repository_cfg);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_USE_NVS && COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE */
+
+    if (!launcher->infrastructure.preloaded_repository) {
+        ESP_LOGE(tag, "Failed to create preloaded repository");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_preloaded_repository = true;
+    ESP_LOGI(tag, "Preloaded repository created");
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE */
+
+    /* WiFi Repository */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE
+
+#if defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_USE_NVS) && defined(COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE)
+    inf_repository_wifi_nvs_impl_cfg_t wifi_repository_cfg = {
+        .nvs = launcher->driver.nvs_handle,
+    };
+    launcher->infrastructure.wifi_repository = inf_repository_wifi_nvs_impl_new(&wifi_repository_cfg);
+#else
+    inf_repository_wifi_stub_impl_cfg_t wifi_repository_cfg = INF_REPOSITORY_WIFI_STUB_IMPL_CFG_DEFAULT();
+    launcher->infrastructure.wifi_repository                = inf_repository_wifi_stub_impl_new(&wifi_repository_cfg);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_USE_NVS && COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE */
+
+    if (!launcher->infrastructure.wifi_repository) {
+        ESP_LOGE(tag, "Failed to create WiFi repository");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_wifi_repository = true;
+    ESP_LOGI(tag, "WiFi repository created");
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE */
+
+    return DOMAIN_MODELS_ERROR_OK;
+}
+
+void cmp_main_infrastructure_deinit(cmp_main_launcher_t* launcher) {
+    if (!launcher) {
+        return;
+    }
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE
+    if (init_wifi_repository) {
+#if defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_USE_NVS) && defined(COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE)
+        inf_repository_wifi_nvs_impl_delete(launcher->infrastructure.wifi_repository);
+#else
+        inf_repository_wifi_stub_impl_delete(launcher->infrastructure.wifi_repository);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_USE_NVS && COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE */
+        launcher->infrastructure.wifi_repository = NULL;
+        init_wifi_repository                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE
+    if (init_preloaded_repository) {
+#if defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_USE_NVS) && defined(COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE)
+        inf_repository_preloaded_nvs_impl_delete(launcher->infrastructure.preloaded_repository);
+#else
+        inf_repository_preloaded_stub_impl_delete(launcher->infrastructure.preloaded_repository);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_USE_NVS && COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE */
+        launcher->infrastructure.preloaded_repository = NULL;
+        init_preloaded_repository                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE
+    if (init_network_interface) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF
+        inf_network_interface_esp_netif_impl_delete(launcher->infrastructure.network_interface);
+#else
+        inf_network_interface_stub_impl_delete(launcher->infrastructure.network_interface);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF */
+        launcher->infrastructure.network_interface = NULL;
+        init_network_interface                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
+    if (init_wifi) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI
+        inf_device_wifi_esp_wifi_impl_deinit(launcher->infrastructure.wifi);
+#else
+        inf_device_wifi_stub_impl_deinit(launcher->infrastructure.wifi);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI */
+        init_wifi = false;
+    }
+    if (launcher->infrastructure.wifi) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI
+        inf_device_wifi_esp_wifi_impl_delete(launcher->infrastructure.wifi);
+#else
+        inf_device_wifi_stub_impl_delete(launcher->infrastructure.wifi);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI */
+        launcher->infrastructure.wifi = NULL;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE
+    if (init_logger) {
+        inf_logger_leveled_stdio_impl_delete(launcher->infrastructure.logger);
+        launcher->infrastructure.logger = NULL;
+        init_logger                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE */
+}

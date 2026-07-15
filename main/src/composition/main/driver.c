@@ -1,5 +1,7 @@
 #include "composition/main/driver.h"  // IWYU pragma: keep
 
+#include <string.h>  // IWYU pragma: keep
+
 #include "composition/main/config.h"     // IWYU pragma: keep
 #include "composition/main/preloaded.h"  // IWYU pragma: keep
 #include "domain/models/error.h"         // IWYU pragma: keep
@@ -458,6 +460,23 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
 
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE */
 
+    /* HTTP Server */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE
+
+    httpd_config_t http_server_cfg = HTTPD_DEFAULT_CONFIG();
+    err                            = httpd_start(&launcher->driver.http_server_handle, &http_server_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(tag, "Failed to start HTTP server: %s", esp_err_to_name(err));
+        cmp_main_driver_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_FAILURE;
+    }
+
+    init_http_server = true;
+    ESP_LOGI(tag, "HTTP server started");
+
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE */
+
     return DOMAIN_MODELS_ERROR_OK;
 }
 
@@ -470,7 +489,9 @@ void cmp_main_driver_deinit(cmp_main_launcher_t* launcher) {
 
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE
     if (init_http_server) {
-        init_http_server = false;
+        httpd_stop(launcher->driver.http_server_handle);
+        launcher->driver.http_server_handle = NULL;
+        init_http_server                    = false;
     }
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE */
 

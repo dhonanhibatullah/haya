@@ -1,15 +1,23 @@
 #ifndef COMPOSITION_MAIN_TYPES_H
 #define COMPOSITION_MAIN_TYPES_H
 
-#include "config.h"            // IWYU pragma: keep
-#include "driver/i2c_types.h"  // IWYU pragma: keep
-#include "esp_eth_driver.h"
-#include "esp_eth_mac.h"      // IWYU pragma: keep
-#include "esp_eth_phy.h"      // IWYU pragma: keep
-#include "esp_http_server.h"  // IWYU pragma: keep
-#include "mqtt_client.h"      // IWYU pragma: keep
-#include "nvs.h"              // IWYU pragma: keep
-#include "sdmmc_cmd.h"        // IWYU pragma: keep
+#include "config.h"                                         // IWYU pragma: keep
+#include "domain/contracts/device/wifi.h"                   // IWYU pragma: keep
+#include "domain/contracts/logger/leveled.h"                // IWYU pragma: keep
+#include "domain/contracts/network/interface.h"             // IWYU pragma: keep
+#include "domain/contracts/repository/preloaded.h"          // IWYU pragma: keep
+#include "domain/contracts/repository/wifi.h"               // IWYU pragma: keep
+#include "domain/usecases/wifiman.h"                        // IWYU pragma: keep
+#include "driver/i2c_types.h"                               // IWYU pragma: keep
+#include "esp_eth_driver.h"                                 // IWYU pragma: keep
+#include "esp_eth_mac.h"                                    // IWYU pragma: keep
+#include "esp_eth_phy.h"                                    // IWYU pragma: keep
+#include "esp_http_server.h"                                // IWYU pragma: keep
+#include "mqtt_client.h"                                    // IWYU pragma: keep
+#include "nvs.h"                                            // IWYU pragma: keep
+#include "presentation/http/handler/wifiman_types.h"        // IWYU pragma: keep
+#include "presentation/task/wifiman_sta_reconnect/types.h"  // IWYU pragma: keep
+#include "sdmmc_cmd.h"                                      // IWYU pragma: keep
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,12 +60,41 @@ typedef struct {
 } cmp_main_driver_t;
 
 typedef struct {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE
+    dom_contracts_logger_leveled_t* logger;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
+    dom_contracts_device_wifi_t* wifi;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE
+    dom_contracts_network_interface_t* network_interface;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE
+    dom_contracts_repository_preloaded_t* preloaded_repository;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE
+    dom_contracts_repository_wifi_t* wifi_repository;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE */
 } cmp_main_infrastructure_t;
 
 typedef struct {
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE
+    dom_usecases_wifiman_t* wifiman;
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE */
 } cmp_main_application_t;
 
 typedef struct {
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE
+    pres_http_handler_wifiman_t wifiman_http_handler;
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE
+    pres_task_wifiman_sta_reconnect_t* wifiman_sta_reconnect_task;
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE */
 } cmp_main_presentation_t;
 
 typedef struct {

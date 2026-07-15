@@ -5,9 +5,10 @@
 #include <stddef.h>   // IWYU pragma: keep
 #include <stdint.h>   // IWYU pragma: keep
 
-#include "hal/gpio_types.h"  // IWYU pragma: keep
-#include "hal/spi_types.h"   // IWYU pragma: keep
-#include "soc/gpio_num.h"    // IWYU pragma: keep
+#include "domain/models/logger.h"  // IWYU pragma: keep
+#include "hal/gpio_types.h"        // IWYU pragma: keep
+#include "hal/spi_types.h"         // IWYU pragma: keep
+#include "soc/gpio_num.h"          // IWYU pragma: keep
 
 /* Driver Config Defines */
 
@@ -32,9 +33,24 @@
 
 /* Infrastructure Config Defines */
 
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_USE_NVS
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE
+#define COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_USE_NVS
+
 /* Application Config Defines */
 
+#define COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE
+
 /* Presentation Config Defines */
+
+#define COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE
+#define COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE
 
 #ifdef __cplusplus
 extern "C" {
@@ -143,12 +159,40 @@ typedef struct {
     } driver;
 
     struct infrastructure {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE
+        const dom_models_logger_level_t logger_leveled_stdio_level;
+        const unsigned int              logger_leveled_stdio_callback_max_count;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI
+        const char* wifi_esp_wifi_sta_if_key;
+        const char* wifi_esp_wifi_ap_if_key;
+        const bool  wifi_esp_wifi_register_event_handler;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF
+        const char* network_interface_esp_netif_sta_if_key;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE */
     } infrastructure;
 
     struct application {
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE
+        const size_t wifiman_reconnect_max_trials;
+        const bool   wifiman_ap_auto_manage_enabled;
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE */
     } application;
 
     struct presentation {
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE
+        const char*    wifiman_sta_reconnect_task_name;
+        const uint32_t wifiman_sta_reconnect_task_stack_size;
+        const uint32_t wifiman_sta_reconnect_task_priority;
+        const uint32_t wifiman_sta_reconnect_task_interval_ms;
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE */
     } presentation;
 
 } cmp_main_config_t;

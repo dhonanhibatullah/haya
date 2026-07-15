@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-void cmp_main_launcher();
+void cmp_main_launcher(void);
 
 #ifdef __cplusplus
 }

@@ -1,8 +1,10 @@
 #include "composition/main/config.h"
 
-#include "hal/gpio_types.h"  // IWYU pragma: keep
-#include "hal/spi_types.h"   // IWYU pragma: keep
-#include "soc/gpio_num.h"    // IWYU pragma: keep
+#include "application/wifiman/impl_types.h"                 // IWYU pragma: keep
+#include "hal/gpio_types.h"                                 // IWYU pragma: keep
+#include "hal/spi_types.h"                                  // IWYU pragma: keep
+#include "presentation/task/wifiman_sta_reconnect/types.h"  // IWYU pragma: keep
+#include "soc/gpio_num.h"                                   // IWYU pragma: keep
 
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE
 static const cmp_main_config_driver_gpio_t cmp_main_gpio_configs[] = {
@@ -73,9 +75,9 @@ const cmp_main_config_t cmp_main_config = {
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SPI_3_ENABLE */
 
 /* NVS */
-#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE
         .nvs_namespace = PROJECT_NAME,
-#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_ISR_ENABLE*/
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_NVS_ENABLE */
 
 /* LittleFS */
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_LITTLEFS_ENABLE
@@ -116,5 +118,39 @@ const cmp_main_config_t cmp_main_config = {
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE
         .ble_device_name = "haya",
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE */
+    },
+    .infrastructure = {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE
+        .logger_leveled_stdio_level              = DOMAIN_MODELS_LOGGER_LEVEL_INFO,
+        .logger_leveled_stdio_callback_max_count = 0,
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI
+        .wifi_esp_wifi_sta_if_key             = "WIFI_STA_DEF",
+        .wifi_esp_wifi_ap_if_key              = "WIFI_AP_DEF",
+        .wifi_esp_wifi_register_event_handler = true,
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF
+        .network_interface_esp_netif_sta_if_key = "WIFI_STA_DEF",
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE */
+    },
+    .application = {
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE
+        .wifiman_reconnect_max_trials   = APP_WIFIMAN_IMPL_DEFAULT_RECONNECT_MAX_TRIALS,
+        .wifiman_ap_auto_manage_enabled = true,
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE */
+    },
+    .presentation = {
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE
+        .wifiman_sta_reconnect_task_name        = PRES_TASK_WIFIMAN_STA_RECONNECT_DEFAULT_TASK_NAME,
+        .wifiman_sta_reconnect_task_stack_size  = PRES_TASK_WIFIMAN_STA_RECONNECT_DEFAULT_STACK_SIZE,
+        .wifiman_sta_reconnect_task_priority    = PRES_TASK_WIFIMAN_STA_RECONNECT_DEFAULT_PRIORITY,
+        .wifiman_sta_reconnect_task_interval_ms = PRES_TASK_WIFIMAN_STA_RECONNECT_DEFAULT_INTERVAL_MS,
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_TASK_WIFIMAN_STA_RECONNECT_ENABLE */
     },
 };

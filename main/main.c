@@ -1,5 +1,5 @@
-#include <stdio.h>
+#include "composition/main/launcher.h"
 
 void app_main(void) {
-    printf("const char * _Nonnull, ...");
+    cmp_main_launcher();
 }
