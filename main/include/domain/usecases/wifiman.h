@@ -28,6 +28,8 @@ typedef struct {
     bool                                  auto_reconnect_enabled;
     size_t                                reconnect_trial_count;
     size_t                                reconnect_max_trials;
+    bool                                  ap_auto_manage_enabled;
+    bool                                  sta_connection_commit_required;
 } dom_usecases_wifiman_status_t;
 
 struct dom_usecases_wifiman_t {
@@ -58,6 +60,9 @@ struct dom_usecases_wifiman_t {
         dom_usecases_wifiman_t* self
     );
     dom_models_error_t (*disconnect_sta)(
+        dom_usecases_wifiman_t* self
+    );
+    dom_models_error_t (*commit_sta_connection)(
         dom_usecases_wifiman_t* self
     );
     dom_models_error_t (*get_stored_sta)(

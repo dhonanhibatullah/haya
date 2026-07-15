@@ -120,6 +120,8 @@ cJSON* pres_http_dto_wifiman_status_to_json(const dom_usecases_wifiman_status_t*
     cJSON_AddBoolToObject(root, "auto_reconnect_enabled", status->auto_reconnect_enabled);
     cJSON_AddNumberToObject(root, "reconnect_trial_count", (double)status->reconnect_trial_count);
     cJSON_AddNumberToObject(root, "reconnect_max_trials", (double)status->reconnect_max_trials);
+    cJSON_AddBoolToObject(root, "ap_auto_manage_enabled", status->ap_auto_manage_enabled);
+    cJSON_AddBoolToObject(root, "sta_connection_commit_required", status->sta_connection_commit_required);
 
     return root;
 }

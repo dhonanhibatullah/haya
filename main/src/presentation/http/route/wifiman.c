@@ -45,6 +45,11 @@ static const pres_http_route_wifiman_route_t routes[] = {
         .handler = pres_http_handler_wifiman_disconnect_sta,
     },
     {
+        .uri     = "/api/wifi/sta/commit",
+        .method  = HTTP_POST,
+        .handler = pres_http_handler_wifiman_commit_sta_connection,
+    },
+    {
         .uri     = "/api/wifi/sta/credential",
         .method  = HTTP_GET,
         .handler = pres_http_handler_wifiman_get_stored_sta,

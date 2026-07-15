@@ -20,6 +20,8 @@ esp_err_t pres_http_handler_wifiman_connect_stored_sta(httpd_req_t* req);
 
 esp_err_t pres_http_handler_wifiman_disconnect_sta(httpd_req_t* req);
 
+esp_err_t pres_http_handler_wifiman_commit_sta_connection(httpd_req_t* req);
+
 esp_err_t pres_http_handler_wifiman_get_stored_sta(httpd_req_t* req);
 
 esp_err_t pres_http_handler_wifiman_set_sta_credential(httpd_req_t* req);

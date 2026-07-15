@@ -170,6 +170,32 @@ esp_err_t pres_http_handler_wifiman_disconnect_sta(httpd_req_t* req) {
     return ESP_OK;
 }
 
+esp_err_t pres_http_handler_wifiman_commit_sta_connection(httpd_req_t* req) {
+    pres_http_handler_wifiman_t* handler = NULL;
+    dom_models_error_t           err     = get_handler(req, &handler);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return pres_http_dto_common_send_domain_error(req, err);
+    }
+
+    dom_usecases_wifiman_status_t status;
+    err = handler->wifiman->get_status(handler->wifiman, &status);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return pres_http_dto_common_send_domain_error(req, err);
+    }
+    if (!status.wifi.connected) {
+        return pres_http_dto_common_send_domain_error(req, DOMAIN_MODELS_ERROR_BAD_STATE);
+    }
+
+    esp_err_t http_err = send_accepted(req);
+    if (http_err != ESP_OK) {
+        return http_err;
+    }
+
+    (void)handler->wifiman->commit_sta_connection(handler->wifiman);
+
+    return ESP_OK;
+}
+
 esp_err_t pres_http_handler_wifiman_get_stored_sta(httpd_req_t* req) {
     pres_http_handler_wifiman_t* handler = NULL;
     dom_models_error_t           err     = get_handler(req, &handler);

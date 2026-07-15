@@ -8,6 +8,14 @@
 #include "domain/models/wifi.h"
 #include "infrastructure/device/wifi/stub_impl_utils.h"
 
+/* Helper Function Prototypes */
+
+static void dispatch_event(
+    inf_device_wifi_stub_impl_ctx_t* ctx,
+    dom_models_wifi_event_type_t     type,
+    uint32_t                         driver_status
+);
+
 /* Contract Function Prototypes */
 
 static dom_models_error_t start_impl(
@@ -46,6 +54,15 @@ static dom_models_error_t get_scanned_impl(
     dom_contracts_device_wifi_t*   self,
     dom_models_wifi_scan_result_t* out
 );
+static dom_models_error_t add_event_callback_impl(
+    dom_contracts_device_wifi_t*     self,
+    void*                            cb_ctx,
+    dom_models_wifi_event_callback_t cb_func
+);
+static dom_models_error_t remove_event_callback_impl(
+    dom_contracts_device_wifi_t*     self,
+    dom_models_wifi_event_callback_t cb_func
+);
 
 /* Constructor and Destructor */
 
@@ -72,16 +89,18 @@ dom_contracts_device_wifi_t* inf_device_wifi_stub_impl_new(const inf_device_wifi
         return NULL;
     }
 
-    self->start          = start_impl;
-    self->stop           = stop_impl;
-    self->set_mode       = set_mode_impl;
-    self->get_status     = get_status_impl;
-    self->connect_sta    = connect_sta_impl;
-    self->disconnect_sta = disconnect_sta_impl;
-    self->start_ap       = start_ap_impl;
-    self->stop_ap        = stop_ap_impl;
-    self->start_scan     = start_scan_impl;
-    self->get_scanned    = get_scanned_impl;
+    self->start                 = start_impl;
+    self->stop                  = stop_impl;
+    self->set_mode              = set_mode_impl;
+    self->get_status            = get_status_impl;
+    self->connect_sta           = connect_sta_impl;
+    self->disconnect_sta        = disconnect_sta_impl;
+    self->start_ap              = start_ap_impl;
+    self->stop_ap               = stop_ap_impl;
+    self->start_scan            = start_scan_impl;
+    self->get_scanned           = get_scanned_impl;
+    self->add_event_callback    = add_event_callback_impl;
+    self->remove_event_callback = remove_event_callback_impl;
 
     return self;
 }
@@ -152,7 +171,17 @@ static dom_models_error_t stop_impl(
 
     inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
 
+    bool was_connected  = ctx->connected;
+    bool was_ap_started = ctx->ap_started;
+
     inf_device_wifi_stub_impl_reset_runtime(ctx);
+
+    if (was_connected) {
+        dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_STA_DISCONNECTED, 0);
+    }
+    if (was_ap_started) {
+        dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_AP_STOPPED, 0);
+    }
 
     return DOMAIN_MODELS_ERROR_OK;
 }
@@ -246,6 +275,7 @@ static dom_models_error_t connect_sta_impl(
     }
 
     inf_device_wifi_stub_impl_fill_default_connected_ap(ctx, ssid, channel, DOM_MODELS_WIFI_AUTH_WPA2_PSK);
+    dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_STA_CONNECTED, 0);
 
     return DOMAIN_MODELS_ERROR_OK;
 }
@@ -263,6 +293,8 @@ static dom_models_error_t disconnect_sta_impl(
     if (ctx->mode == DOM_MODELS_WIFI_MODE_APSTA) {
         ctx->mode = DOM_MODELS_WIFI_MODE_AP;
     }
+
+    dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_STA_DISCONNECTED, 0);
 
     return DOMAIN_MODELS_ERROR_OK;
 }
@@ -304,6 +336,7 @@ static dom_models_error_t start_ap_impl(
     }
 
     inf_device_wifi_stub_impl_fill_default_connected_ap(ctx, ssid, channel, auth_mode);
+    dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_AP_STARTED, 0);
 
     return DOMAIN_MODELS_ERROR_OK;
 }
@@ -324,6 +357,8 @@ static dom_models_error_t stop_ap_impl(
         ctx->mode    = DOM_MODELS_WIFI_MODE_NULL;
         ctx->started = false;
     }
+
+    dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_AP_STOPPED, 0);
 
     return DOMAIN_MODELS_ERROR_OK;
 }
@@ -367,4 +402,94 @@ static dom_models_error_t get_scanned_impl(
     memcpy(out, &ctx->scanned, sizeof(dom_models_wifi_scan_result_t));
 
     return DOMAIN_MODELS_ERROR_OK;
+}
+
+static dom_models_error_t add_event_callback_impl(
+    dom_contracts_device_wifi_t*     self,
+    void*                            cb_ctx,
+    dom_models_wifi_event_callback_t cb_func
+) {
+    if (!self || !self->ctx || !cb_func) {
+        return inf_device_wifi_stub_impl_bad_argument_error();
+    }
+
+    inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
+
+    for (size_t i = 0; i < ctx->event_cb_cnt; i++) {
+        if (ctx->event_cb_funcs[i] == cb_func) {
+            return DOMAIN_MODELS_ERROR_OK;
+        }
+    }
+
+    if (ctx->event_cb_cnt >= INF_DEVICE_WIFI_STUB_IMPL_EVENT_CALLBACK_MAX) {
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    ctx->event_cb_funcs[ctx->event_cb_cnt] = cb_func;
+    ctx->event_cb_ctxs[ctx->event_cb_cnt]  = cb_ctx;
+    ctx->event_cb_cnt += 1;
+
+    return DOMAIN_MODELS_ERROR_OK;
+}
+
+static dom_models_error_t remove_event_callback_impl(
+    dom_contracts_device_wifi_t*     self,
+    dom_models_wifi_event_callback_t cb_func
+) {
+    if (!self || !self->ctx || !cb_func) {
+        return inf_device_wifi_stub_impl_bad_argument_error();
+    }
+
+    inf_device_wifi_stub_impl_ctx_t* ctx = self->ctx;
+
+    for (size_t i = 0; i < ctx->event_cb_cnt; i++) {
+        if (ctx->event_cb_funcs[i] != cb_func) {
+            continue;
+        }
+
+        size_t last_idx = ctx->event_cb_cnt - 1;
+
+        ctx->event_cb_funcs[i] = NULL;
+        ctx->event_cb_ctxs[i]  = NULL;
+
+        if (i != last_idx) {
+            ctx->event_cb_funcs[i] = ctx->event_cb_funcs[last_idx];
+            ctx->event_cb_ctxs[i]  = ctx->event_cb_ctxs[last_idx];
+
+            ctx->event_cb_funcs[last_idx] = NULL;
+            ctx->event_cb_ctxs[last_idx]  = NULL;
+        }
+
+        ctx->event_cb_cnt -= 1;
+
+        return DOMAIN_MODELS_ERROR_OK;
+    }
+
+    return DOMAIN_MODELS_ERROR_NOT_FOUND;
+}
+
+/* Helper Function Implementations */
+
+static void dispatch_event(
+    inf_device_wifi_stub_impl_ctx_t* ctx,
+    dom_models_wifi_event_type_t     type,
+    uint32_t                         driver_status
+) {
+    if (!ctx) {
+        return;
+    }
+
+    dom_models_wifi_event_t event = {
+        .type          = type,
+        .driver_status = driver_status,
+    };
+
+    size_t cb_cnt = ctx->event_cb_cnt;
+    for (size_t i = 0; i < cb_cnt; i++) {
+        if (!ctx->event_cb_funcs[i]) {
+            continue;
+        }
+
+        ctx->event_cb_funcs[i](ctx->event_cb_ctxs[i], &event);
+    }
 }

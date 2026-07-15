@@ -52,6 +52,15 @@ struct dom_contracts_device_wifi_t {
         dom_contracts_device_wifi_t*   self,
         dom_models_wifi_scan_result_t* out
     );
+    dom_models_error_t (*add_event_callback)(
+        dom_contracts_device_wifi_t*     self,
+        void*                            cb_ctx,
+        dom_models_wifi_event_callback_t cb_func
+    );
+    dom_models_error_t (*remove_event_callback)(
+        dom_contracts_device_wifi_t*     self,
+        dom_models_wifi_event_callback_t cb_func
+    );
 };
 
 static inline dom_contracts_device_wifi_t* dom_contracts_device_wifi_new(void* ctx) {

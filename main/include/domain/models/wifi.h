@@ -173,6 +173,21 @@ typedef enum {
     DOM_MODELS_WIFI_SCAN_STATUS_FAILED,
 } dom_models_wifi_scan_status_t;
 
+typedef enum {
+    DOM_MODELS_WIFI_EVENT_UNKNOWN = 0,
+    DOM_MODELS_WIFI_EVENT_STA_CONNECTED,
+    DOM_MODELS_WIFI_EVENT_STA_DISCONNECTED,
+    DOM_MODELS_WIFI_EVENT_AP_STARTED,
+    DOM_MODELS_WIFI_EVENT_AP_STOPPED,
+} dom_models_wifi_event_type_t;
+
+typedef struct {
+    dom_models_wifi_event_type_t type;
+    uint32_t                     driver_status;
+} dom_models_wifi_event_t;
+
+typedef void (*dom_models_wifi_event_callback_t)(void* cb_ctx, const dom_models_wifi_event_t* event);
+
 typedef struct {
     dom_models_wifi_scan_status_t status;
     uint32_t                      scan_id;

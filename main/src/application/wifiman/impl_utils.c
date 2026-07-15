@@ -9,7 +9,7 @@
 
 /* Helper Function Prototypes */
 
-static bool has_wifi_functions(dom_contracts_device_wifi_t* wifi);
+static bool has_wifi_functions(dom_contracts_device_wifi_t* wifi, bool event_callback_required);
 static bool has_wifi_repository_functions(dom_contracts_repository_wifi_t* repository);
 static bool has_preloaded_repository_functions(dom_contracts_repository_preloaded_t* repository);
 static bool has_network_interface_functions(dom_contracts_network_interface_t* network_interface);
@@ -19,7 +19,7 @@ dom_models_error_t app_wifiman_impl_validate_cfg(const app_wifiman_impl_cfg_t* c
         !cfg->logger ||
         !cfg->logger->error ||
         !cfg->logger->info ||
-        !has_wifi_functions(cfg->wifi) ||
+        !has_wifi_functions(cfg->wifi, cfg->ap_auto_manage_enabled) ||
         !has_wifi_repository_functions(cfg->wifi_repository) ||
         !has_preloaded_repository_functions(cfg->preloaded_repository) ||
         !has_network_interface_functions(cfg->network_interface)) {
@@ -169,18 +169,26 @@ dom_models_error_t app_wifiman_impl_load_stored_sta(
 
 /* Helper Function Implementations */
 
-static bool has_wifi_functions(dom_contracts_device_wifi_t* wifi) {
-    return wifi &&
-           wifi->start &&
-           wifi->stop &&
-           wifi->set_mode &&
-           wifi->get_status &&
-           wifi->connect_sta &&
-           wifi->disconnect_sta &&
-           wifi->start_ap &&
-           wifi->stop_ap &&
-           wifi->start_scan &&
-           wifi->get_scanned;
+static bool has_wifi_functions(dom_contracts_device_wifi_t* wifi, bool event_callback_required) {
+    if (!wifi ||
+        !wifi->start ||
+        !wifi->stop ||
+        !wifi->set_mode ||
+        !wifi->get_status ||
+        !wifi->connect_sta ||
+        !wifi->disconnect_sta ||
+        !wifi->start_ap ||
+        !wifi->stop_ap ||
+        !wifi->start_scan ||
+        !wifi->get_scanned) {
+        return false;
+    }
+
+    if (event_callback_required && (!wifi->add_event_callback || !wifi->remove_event_callback)) {
+        return false;
+    }
+
+    return true;
 }
 
 static bool has_wifi_repository_functions(dom_contracts_repository_wifi_t* repository) {

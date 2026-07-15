@@ -17,9 +17,17 @@
 static void wifi_event_handler(void* arg, esp_event_base_t base, int32_t id, void* data);
 static void on_scan_done(inf_device_wifi_esp_wifi_impl_ctx_t* ctx, const wifi_event_sta_scan_done_t* event);
 static void on_sta_connected(inf_device_wifi_esp_wifi_impl_ctx_t* ctx);
-static void on_sta_disconnected(inf_device_wifi_esp_wifi_impl_ctx_t* ctx);
+static void on_sta_disconnected(inf_device_wifi_esp_wifi_impl_ctx_t* ctx, const wifi_event_sta_disconnected_t* event);
 static void on_ap_start(inf_device_wifi_esp_wifi_impl_ctx_t* ctx);
 static void on_ap_stop(inf_device_wifi_esp_wifi_impl_ctx_t* ctx);
+
+/* Helper Function Prototypes */
+
+static void dispatch_event(
+    inf_device_wifi_esp_wifi_impl_ctx_t* ctx,
+    dom_models_wifi_event_type_t         type,
+    uint32_t                             driver_status
+);
 
 /* Contract Function Prototypes */
 
@@ -59,6 +67,15 @@ static dom_models_error_t get_scanned_impl(
     dom_contracts_device_wifi_t*   self,
     dom_models_wifi_scan_result_t* out
 );
+static dom_models_error_t add_event_callback_impl(
+    dom_contracts_device_wifi_t*     self,
+    void*                            cb_ctx,
+    dom_models_wifi_event_callback_t cb_func
+);
+static dom_models_error_t remove_event_callback_impl(
+    dom_contracts_device_wifi_t*     self,
+    dom_models_wifi_event_callback_t cb_func
+);
 
 /* Constructor and Destructor */
 
@@ -83,16 +100,18 @@ dom_contracts_device_wifi_t* inf_device_wifi_esp_wifi_impl_new(const inf_device_
         return NULL;
     }
 
-    self->start          = start_impl;
-    self->stop           = stop_impl;
-    self->set_mode       = set_mode_impl;
-    self->get_status     = get_status_impl;
-    self->connect_sta    = connect_sta_impl;
-    self->disconnect_sta = disconnect_sta_impl;
-    self->start_ap       = start_ap_impl;
-    self->stop_ap        = stop_ap_impl;
-    self->start_scan     = start_scan_impl;
-    self->get_scanned    = get_scanned_impl;
+    self->start                 = start_impl;
+    self->stop                  = stop_impl;
+    self->set_mode              = set_mode_impl;
+    self->get_status            = get_status_impl;
+    self->connect_sta           = connect_sta_impl;
+    self->disconnect_sta        = disconnect_sta_impl;
+    self->start_ap              = start_ap_impl;
+    self->stop_ap               = stop_ap_impl;
+    self->start_scan            = start_scan_impl;
+    self->get_scanned           = get_scanned_impl;
+    self->add_event_callback    = add_event_callback_impl;
+    self->remove_event_callback = remove_event_callback_impl;
 
     return self;
 }
@@ -530,6 +549,70 @@ static dom_models_error_t get_scanned_impl(
     return DOMAIN_MODELS_ERROR_OK;
 }
 
+static dom_models_error_t add_event_callback_impl(
+    dom_contracts_device_wifi_t*     self,
+    void*                            cb_ctx,
+    dom_models_wifi_event_callback_t cb_func
+) {
+    if (!self || !self->ctx || !cb_func) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    inf_device_wifi_esp_wifi_impl_ctx_t* ctx = self->ctx;
+
+    for (size_t i = 0; i < ctx->event_cb_cnt; i++) {
+        if (ctx->event_cb_funcs[i] == cb_func) {
+            return DOMAIN_MODELS_ERROR_OK;
+        }
+    }
+
+    if (ctx->event_cb_cnt >= INF_DEVICE_WIFI_ESP_WIFI_IMPL_EVENT_CALLBACK_MAX) {
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    ctx->event_cb_funcs[ctx->event_cb_cnt] = cb_func;
+    ctx->event_cb_ctxs[ctx->event_cb_cnt]  = cb_ctx;
+    ctx->event_cb_cnt += 1;
+
+    return DOMAIN_MODELS_ERROR_OK;
+}
+
+static dom_models_error_t remove_event_callback_impl(
+    dom_contracts_device_wifi_t*     self,
+    dom_models_wifi_event_callback_t cb_func
+) {
+    if (!self || !self->ctx || !cb_func) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    inf_device_wifi_esp_wifi_impl_ctx_t* ctx = self->ctx;
+
+    for (size_t i = 0; i < ctx->event_cb_cnt; i++) {
+        if (ctx->event_cb_funcs[i] != cb_func) {
+            continue;
+        }
+
+        size_t last_idx = ctx->event_cb_cnt - 1;
+
+        ctx->event_cb_funcs[i] = NULL;
+        ctx->event_cb_ctxs[i]  = NULL;
+
+        if (i != last_idx) {
+            ctx->event_cb_funcs[i] = ctx->event_cb_funcs[last_idx];
+            ctx->event_cb_ctxs[i]  = ctx->event_cb_ctxs[last_idx];
+
+            ctx->event_cb_funcs[last_idx] = NULL;
+            ctx->event_cb_ctxs[last_idx]  = NULL;
+        }
+
+        ctx->event_cb_cnt -= 1;
+
+        return DOMAIN_MODELS_ERROR_OK;
+    }
+
+    return DOMAIN_MODELS_ERROR_NOT_FOUND;
+}
+
 /* Event Handler Function Implementations */
 
 static void wifi_event_handler(void* arg, esp_event_base_t base, int32_t id, void* data) {
@@ -547,7 +630,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t base, int32_t id, voi
             on_sta_connected(ctx);
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
-            on_sta_disconnected(ctx);
+            on_sta_disconnected(ctx, (const wifi_event_sta_disconnected_t*)data);
             break;
         case WIFI_EVENT_AP_START:
             on_ap_start(ctx);
@@ -592,14 +675,16 @@ static void on_sta_connected(inf_device_wifi_esp_wifi_impl_ctx_t* ctx) {
     }
 
     ctx->sta_connected = true;
+    dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_STA_CONNECTED, 0);
 }
 
-static void on_sta_disconnected(inf_device_wifi_esp_wifi_impl_ctx_t* ctx) {
+static void on_sta_disconnected(inf_device_wifi_esp_wifi_impl_ctx_t* ctx, const wifi_event_sta_disconnected_t* event) {
     if (!ctx) {
         return;
     }
 
     ctx->sta_connected = false;
+    dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_STA_DISCONNECTED, event ? (uint32_t)event->reason : 0);
 }
 
 static void on_ap_start(inf_device_wifi_esp_wifi_impl_ctx_t* ctx) {
@@ -609,6 +694,7 @@ static void on_ap_start(inf_device_wifi_esp_wifi_impl_ctx_t* ctx) {
 
     ctx->ap_started = true;
     ctx->started    = true;
+    dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_AP_STARTED, 0);
 }
 
 static void on_ap_stop(inf_device_wifi_esp_wifi_impl_ctx_t* ctx) {
@@ -617,4 +703,31 @@ static void on_ap_stop(inf_device_wifi_esp_wifi_impl_ctx_t* ctx) {
     }
 
     ctx->ap_started = false;
+    dispatch_event(ctx, DOM_MODELS_WIFI_EVENT_AP_STOPPED, 0);
+}
+
+/* Helper Function Implementations */
+
+static void dispatch_event(
+    inf_device_wifi_esp_wifi_impl_ctx_t* ctx,
+    dom_models_wifi_event_type_t         type,
+    uint32_t                             driver_status
+) {
+    if (!ctx) {
+        return;
+    }
+
+    dom_models_wifi_event_t event = {
+        .type          = type,
+        .driver_status = driver_status,
+    };
+
+    size_t cb_cnt = ctx->event_cb_cnt;
+    for (size_t i = 0; i < cb_cnt; i++) {
+        if (!ctx->event_cb_funcs[i]) {
+            continue;
+        }
+
+        ctx->event_cb_funcs[i](ctx->event_cb_ctxs[i], &event);
+    }
 }

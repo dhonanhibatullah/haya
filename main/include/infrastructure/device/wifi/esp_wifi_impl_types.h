@@ -2,6 +2,7 @@
 #define INFRASTRUCTURE_DEVICE_WIFI_ESP_WIFI_IMPL_TYPES_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "domain/models/wifi.h"
 #include "esp_event_base.h"
@@ -15,6 +16,8 @@ typedef struct {
     const char* ap_if_key;
     bool        register_event_handler;
 } inf_device_wifi_esp_wifi_impl_cfg_t;
+
+#define INF_DEVICE_WIFI_ESP_WIFI_IMPL_EVENT_CALLBACK_MAX 4
 
 #define INF_DEVICE_WIFI_ESP_WIFI_IMPL_CFG_DEFAULT() \
     {                                               \
@@ -32,6 +35,9 @@ typedef struct {
     bool                                sta_connected;
     bool                                ap_started;
     dom_models_wifi_scan_result_t       scanned;
+    dom_models_wifi_event_callback_t    event_cb_funcs[INF_DEVICE_WIFI_ESP_WIFI_IMPL_EVENT_CALLBACK_MAX];
+    void*                               event_cb_ctxs[INF_DEVICE_WIFI_ESP_WIFI_IMPL_EVENT_CALLBACK_MAX];
+    size_t                              event_cb_cnt;
 } inf_device_wifi_esp_wifi_impl_ctx_t;
 
 #ifdef __cplusplus

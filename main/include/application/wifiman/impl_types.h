@@ -16,6 +16,12 @@ extern "C" {
 
 #define APP_WIFIMAN_IMPL_DEFAULT_RECONNECT_MAX_TRIALS 5
 
+typedef enum {
+    APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE = 0,
+    APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_INITIAL,
+    APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_RECONNECT,
+} app_wifiman_impl_sta_connect_source_t;
+
 typedef struct {
     dom_contracts_logger_leveled_t*       logger;
     dom_contracts_device_wifi_t*          wifi;
@@ -23,13 +29,18 @@ typedef struct {
     dom_contracts_repository_preloaded_t* preloaded_repository;
     dom_contracts_network_interface_t*    network_interface;
     size_t                                reconnect_max_trials;
+    bool                                  ap_auto_manage_enabled;
 } app_wifiman_impl_cfg_t;
 
 typedef struct {
-    app_wifiman_impl_cfg_t cfg;
-    bool                   started;
-    bool                   auto_reconnect_enabled;
-    size_t                 reconnect_trial_count;
+    app_wifiman_impl_cfg_t                 cfg;
+    bool                                   started;
+    bool                                   ap_started;
+    bool                                   event_callback_registered;
+    bool                                   auto_reconnect_enabled;
+    bool                                   sta_connection_commit_required;
+    app_wifiman_impl_sta_connect_source_t sta_connect_source;
+    size_t                                 reconnect_trial_count;
 } app_wifiman_impl_ctx_t;
 
 #ifdef __cplusplus
