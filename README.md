@@ -1,4 +1,4 @@
-# **idf-base**
+# **haya**
 
 ## **A. Prerequisites**
 
@@ -23,7 +23,7 @@
 
 * Follow installation guide for EIM GUI from [this](https://docs.espressif.com/projects/idf-im-ui/en/latest/#windows-installation).
 
-* From EIM GUI, choose `Custom Installation` > `Select Target: all` > `Select IDF Version: v5.5.4` > all the default. Wait for the installation to complete.
+* From EIM GUI, choose `Custom Installation` > `Select Target: all` > `Select IDF Version: v6.0.2` > all the default. Wait for the installation to complete.
 
 * Use `ESP-IDF PowerShell` or `ESP-IDF Command Prompt` from the start menu when developing.
 
@@ -42,23 +42,23 @@
     sudo apt install eim-cli
     ```
 
-* Install ESP-IDF v5.5.4:
+* Install ESP-IDF v6.0.2:
 
     ```bash
-    eim install -i v5.5.4
+    eim install -i v6.0.2
     ```
 
 * Add this command to `.bashrc` to ease `idf.py` environment setup:
 
     ```bash
-    echo "alias idf-v5.5.4='source \"$HOME/.espressif/v5.5.4/esp-idf/export.sh\"'" >> ~/.bashrc
+    echo "alias idf-v6.0.2='source \"\$HOME/.espressif/v6.0.2/esp-idf/export.sh\"'" >> ~/.bashrc
     source ~/.bashrc
     ```
 
 * Then activate ESP-IDF with:
 
     ```bash
-    idf-v5.5.4
+    idf-v6.0.2
     ```
 
 ### **3. VSCode Setup**
