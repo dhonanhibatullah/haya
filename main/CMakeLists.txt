@@ -42,4 +42,9 @@ idf_component_register(
         esp_websocket_client
 )
 
-target_compile_definitions(${COMPONENT_LIB} PRIVATE PROJECT_NAME="${APP_NAME}")
+target_compile_definitions(
+    ${COMPONENT_LIB}
+    PRIVATE
+        PROJECT_NAME="${APP_NAME}"
+        PROJECT_VERSION="${PROJECT_VERSION}"
+)

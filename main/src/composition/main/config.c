@@ -1,10 +1,19 @@
 #include "composition/main/config.h"
 
-#include "application/wifiman/impl_types.h"                 // IWYU pragma: keep
-#include "hal/gpio_types.h"                                 // IWYU pragma: keep
-#include "hal/spi_types.h"                                  // IWYU pragma: keep
-#include "presentation/task/wifiman_sta_reconnect/types.h"  // IWYU pragma: keep
-#include "soc/gpio_num.h"                                   // IWYU pragma: keep
+#include "application/wifiman/impl_types.h"                     // IWYU pragma: keep
+#include "hal/gpio_types.h"                                     // IWYU pragma: keep
+#include "hal/spi_types.h"                                      // IWYU pragma: keep
+#include "infrastructure/system/update/esp_https_impl_types.h"  // IWYU pragma: keep
+#include "presentation/task/wifiman_sta_reconnect/types.h"      // IWYU pragma: keep
+#include "soc/gpio_num.h"                                       // IWYU pragma: keep
+
+#ifndef PROJECT_NAME
+#define PROJECT_NAME "haya"
+#endif
+
+#ifndef PROJECT_VERSION
+#define PROJECT_VERSION "v1.0.0"
+#endif
 
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_GPIO_ENABLE
 static const cmp_main_config_driver_gpio_t cmp_main_gpio_configs[] = {
@@ -133,6 +142,21 @@ const cmp_main_config_t cmp_main_config = {
         .logger_leveled_stdio_callback_max_count = 0,
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE */
 
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT
+        .messaging_publish_esp_mqtt_qos                   = 1,
+        .messaging_publish_esp_mqtt_registration_retained = false,
+        .messaging_publish_esp_mqtt_status_retained       = true,
+        .messaging_publish_esp_mqtt_log_retained          = false,
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT
+        .messaging_subscribe_esp_mqtt_qos = 1,
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_ENABLE */
+
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI
         .wifi_esp_wifi_sta_if_key             = "WIFI_STA_DEF",
@@ -158,6 +182,27 @@ const cmp_main_config_t cmp_main_config = {
         .network_interface_esp_netif_eth_if_key = "ETH_DEF",
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF */
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_USE_ESP
+        .system_info_esp_project_name     = PROJECT_NAME,
+        .system_info_esp_project_version  = PROJECT_VERSION,
+        .system_info_esp_name             = PROJECT_NAME,
+        .system_info_esp_type             = PROJECT_NAME,
+        .system_info_esp_firmware_version = PROJECT_VERSION,
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_USE_ESP */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_USE_ESP_HTTPS
+        .system_update_esp_https_http_timeout_ms             = INF_SYSTEM_UPDATE_ESP_HTTPS_IMPL_DEFAULT_HTTP_TIMEOUT_MS,
+        .system_update_esp_https_http_read_buffer_size       = INF_SYSTEM_UPDATE_ESP_HTTPS_IMPL_DEFAULT_HTTP_READ_BUFFER_SIZE,
+        .system_update_esp_https_max_empty_read_count        = INF_SYSTEM_UPDATE_ESP_HTTPS_IMPL_DEFAULT_MAX_EMPTY_READ_COUNT,
+        .system_update_esp_https_cert_pem                    = NULL,
+        .system_update_esp_https_keep_alive_enable           = true,
+        .system_update_esp_https_skip_cert_common_name_check = false,
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_USE_ESP_HTTPS */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE */
     },
     .application = {
 #ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE

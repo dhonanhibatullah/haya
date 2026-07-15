@@ -9,18 +9,31 @@
 #include "infrastructure/device/wifi/esp_wifi_impl.h"         // IWYU pragma: keep
 #include "infrastructure/device/wifi/stub_impl.h"             // IWYU pragma: keep
 #include "infrastructure/logger/leveled/stdio_impl.h"         // IWYU pragma: keep
+#include "infrastructure/messaging/publish/esp_mqtt_impl.h"   // IWYU pragma: keep
+#include "infrastructure/messaging/publish/stub_impl.h"       // IWYU pragma: keep
+#include "infrastructure/messaging/subscribe/esp_mqtt_impl.h" // IWYU pragma: keep
+#include "infrastructure/messaging/subscribe/stub_impl.h"     // IWYU pragma: keep
 #include "infrastructure/network/interface/esp_netif_impl.h"  // IWYU pragma: keep
 #include "infrastructure/network/interface/stub_impl.h"       // IWYU pragma: keep
 #include "infrastructure/repository/preloaded/nvs_impl.h"     // IWYU pragma: keep
 #include "infrastructure/repository/preloaded/stub_impl.h"    // IWYU pragma: keep
 #include "infrastructure/repository/wifi/nvs_impl.h"          // IWYU pragma: keep
 #include "infrastructure/repository/wifi/stub_impl.h"         // IWYU pragma: keep
+#include "infrastructure/system/info/esp_impl.h"              // IWYU pragma: keep
+#include "infrastructure/system/restart/esp_impl.h"           // IWYU pragma: keep
+#include "infrastructure/system/update/esp_https_impl.h"      // IWYU pragma: keep
+#include "infrastructure/system/update/stub_impl.h"           // IWYU pragma: keep
 
 #define TAG_PATH "main/infrastructure"
 
 /* Init Flags for Deinitizalization Sequence */
 
 static bool init_logger               = false;
+static bool init_system_info          = false;
+static bool init_system_restart       = false;
+static bool init_system_update        = false;
+static bool init_messaging_publish    = false;
+static bool init_messaging_subscribe  = false;
 static bool init_wifi                 = false;
 static bool init_ethernet             = false;
 static bool init_network_interface    = false;
@@ -54,6 +67,161 @@ dom_models_error_t cmp_main_infrastructure_init(cmp_main_launcher_t* launcher) {
     ESP_LOGI(tag, "Leveled stdio logger created");
 
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE */
+
+    /* System Info */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_USE_ESP
+    inf_system_info_esp_impl_cfg_t system_info_cfg = {
+        .project_name     = cmp_main_config.infrastructure.system_info_esp_project_name,
+        .project_version  = cmp_main_config.infrastructure.system_info_esp_project_version,
+        .name             = cmp_main_config.infrastructure.system_info_esp_name,
+        .type             = cmp_main_config.infrastructure.system_info_esp_type,
+        .firmware_version = cmp_main_config.infrastructure.system_info_esp_firmware_version,
+    };
+    launcher->infrastructure.system_info = inf_system_info_esp_impl_new(&system_info_cfg);
+#else
+    ESP_LOGE(tag, "No system info infrastructure backend configured");
+    cmp_main_infrastructure_deinit(launcher);
+    return DOMAIN_MODELS_ERROR_NOT_SUPPORTED;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_USE_ESP */
+
+    if (!launcher->infrastructure.system_info) {
+        ESP_LOGE(tag, "Failed to create system info");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_system_info = true;
+    ESP_LOGI(tag, "System info created");
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE */
+
+    /* System Restart */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_USE_ESP
+    inf_system_restart_esp_impl_cfg_t system_restart_cfg = INF_SYSTEM_RESTART_ESP_IMPL_CFG_DEFAULT();
+    launcher->infrastructure.system_restart = inf_system_restart_esp_impl_new(&system_restart_cfg);
+#else
+    ESP_LOGE(tag, "No system restart infrastructure backend configured");
+    cmp_main_infrastructure_deinit(launcher);
+    return DOMAIN_MODELS_ERROR_NOT_SUPPORTED;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_USE_ESP */
+
+    if (!launcher->infrastructure.system_restart) {
+        ESP_LOGE(tag, "Failed to create system restart");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_system_restart = true;
+    ESP_LOGI(tag, "System restart created");
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE */
+
+    /* System Update */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_USE_ESP_HTTPS
+    inf_system_update_esp_https_impl_cfg_t system_update_cfg = {
+        .http_timeout_ms             = cmp_main_config.infrastructure.system_update_esp_https_http_timeout_ms,
+        .http_read_buffer_size       = cmp_main_config.infrastructure.system_update_esp_https_http_read_buffer_size,
+        .max_empty_read_count        = cmp_main_config.infrastructure.system_update_esp_https_max_empty_read_count,
+        .cert_pem                    = cmp_main_config.infrastructure.system_update_esp_https_cert_pem,
+        .keep_alive_enable           = cmp_main_config.infrastructure.system_update_esp_https_keep_alive_enable,
+        .skip_cert_common_name_check = cmp_main_config.infrastructure.system_update_esp_https_skip_cert_common_name_check,
+    };
+    launcher->infrastructure.system_update = inf_system_update_esp_https_impl_new(&system_update_cfg);
+#else
+    inf_system_update_stub_impl_cfg_t system_update_cfg = INF_SYSTEM_UPDATE_STUB_IMPL_CFG_DEFAULT();
+    launcher->infrastructure.system_update              = inf_system_update_stub_impl_new(&system_update_cfg);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_USE_ESP_HTTPS */
+
+    if (!launcher->infrastructure.system_update) {
+        ESP_LOGE(tag, "Failed to create system update");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_system_update = true;
+    ESP_LOGI(tag, "System update created");
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE */
+
+    /* Messaging Publish */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_ENABLE
+
+#if defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT) && \
+    !defined(COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE)
+    ESP_LOGE(tag, "ESP-MQTT messaging publish infrastructure requires MQTT client driver");
+    cmp_main_infrastructure_deinit(launcher);
+    return DOMAIN_MODELS_ERROR_BAD_STATE;
+#else
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT
+    inf_messaging_publish_esp_mqtt_impl_cfg_t messaging_publish_cfg = {
+        .mqtt_client           = launcher->driver.mqtt_client_handle,
+        .device_id_str         = dom_models_preloaded_data.device_id_str,
+        .qos                   = cmp_main_config.infrastructure.messaging_publish_esp_mqtt_qos,
+        .registration_retained = cmp_main_config.infrastructure.messaging_publish_esp_mqtt_registration_retained,
+        .status_retained       = cmp_main_config.infrastructure.messaging_publish_esp_mqtt_status_retained,
+        .log_retained          = cmp_main_config.infrastructure.messaging_publish_esp_mqtt_log_retained,
+    };
+    launcher->infrastructure.messaging_publish = inf_messaging_publish_esp_mqtt_impl_new(&messaging_publish_cfg);
+#else
+    inf_messaging_publish_stub_impl_cfg_t messaging_publish_cfg = INF_MESSAGING_PUBLISH_STUB_IMPL_CFG_DEFAULT();
+    launcher->infrastructure.messaging_publish                = inf_messaging_publish_stub_impl_new(&messaging_publish_cfg);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT */
+
+    if (!launcher->infrastructure.messaging_publish) {
+        ESP_LOGE(tag, "Failed to create messaging publish");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_messaging_publish = true;
+    ESP_LOGI(tag, "Messaging publish created");
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT dependency */
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_ENABLE */
+
+    /* Messaging Subscribe */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_ENABLE
+
+#if defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT) && \
+    !defined(COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE)
+    ESP_LOGE(tag, "ESP-MQTT messaging subscribe infrastructure requires MQTT client driver");
+    cmp_main_infrastructure_deinit(launcher);
+    return DOMAIN_MODELS_ERROR_BAD_STATE;
+#else
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT
+    inf_messaging_subscribe_esp_mqtt_impl_cfg_t messaging_subscribe_cfg = {
+        .mqtt_client   = launcher->driver.mqtt_client_handle,
+        .device_id_str = dom_models_preloaded_data.device_id_str,
+        .qos           = cmp_main_config.infrastructure.messaging_subscribe_esp_mqtt_qos,
+    };
+    launcher->infrastructure.messaging_subscribe = inf_messaging_subscribe_esp_mqtt_impl_new(&messaging_subscribe_cfg);
+#else
+    inf_messaging_subscribe_stub_impl_cfg_t messaging_subscribe_cfg = INF_MESSAGING_SUBSCRIBE_STUB_IMPL_CFG_DEFAULT();
+    launcher->infrastructure.messaging_subscribe                = inf_messaging_subscribe_stub_impl_new(&messaging_subscribe_cfg);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT */
+
+    if (!launcher->infrastructure.messaging_subscribe) {
+        ESP_LOGE(tag, "Failed to create messaging subscribe");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_messaging_subscribe = true;
+    ESP_LOGI(tag, "Messaging subscribe created");
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT dependency */
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_ENABLE */
 
     /* WiFi Device */
 
@@ -309,6 +477,62 @@ void cmp_main_infrastructure_deinit(cmp_main_launcher_t* launcher) {
         launcher->infrastructure.wifi = NULL;
     }
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_ENABLE
+    if (init_messaging_subscribe) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT
+        inf_messaging_subscribe_esp_mqtt_impl_delete(launcher->infrastructure.messaging_subscribe);
+#else
+        inf_messaging_subscribe_stub_impl_delete(launcher->infrastructure.messaging_subscribe);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT */
+        launcher->infrastructure.messaging_subscribe = NULL;
+        init_messaging_subscribe                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_ENABLE
+    if (init_messaging_publish) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT
+        inf_messaging_publish_esp_mqtt_impl_delete(launcher->infrastructure.messaging_publish);
+#else
+        inf_messaging_publish_stub_impl_delete(launcher->infrastructure.messaging_publish);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT */
+        launcher->infrastructure.messaging_publish = NULL;
+        init_messaging_publish                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE
+    if (init_system_update) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_USE_ESP_HTTPS
+        inf_system_update_esp_https_impl_delete(launcher->infrastructure.system_update);
+#else
+        inf_system_update_stub_impl_delete(launcher->infrastructure.system_update);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_USE_ESP_HTTPS */
+        launcher->infrastructure.system_update = NULL;
+        init_system_update                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE
+    if (init_system_restart) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_USE_ESP
+        inf_system_restart_esp_impl_delete(launcher->infrastructure.system_restart);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_USE_ESP */
+        launcher->infrastructure.system_restart = NULL;
+        init_system_restart                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE
+    if (init_system_info) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_USE_ESP
+        inf_system_info_esp_impl_delete(launcher->infrastructure.system_info);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_USE_ESP */
+        launcher->infrastructure.system_info = NULL;
+        init_system_info                     = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE */
 
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE
     if (init_logger) {

@@ -5,9 +5,14 @@
 #include "domain/contracts/device/ethernet.h"               // IWYU pragma: keep
 #include "domain/contracts/device/wifi.h"                   // IWYU pragma: keep
 #include "domain/contracts/logger/leveled.h"                // IWYU pragma: keep
+#include "domain/contracts/messaging/publish.h"             // IWYU pragma: keep
+#include "domain/contracts/messaging/subscribe.h"           // IWYU pragma: keep
 #include "domain/contracts/network/interface.h"             // IWYU pragma: keep
 #include "domain/contracts/repository/preloaded.h"          // IWYU pragma: keep
 #include "domain/contracts/repository/wifi.h"               // IWYU pragma: keep
+#include "domain/contracts/system/info.h"                   // IWYU pragma: keep
+#include "domain/contracts/system/restart.h"                // IWYU pragma: keep
+#include "domain/contracts/system/update.h"                 // IWYU pragma: keep
 #include "domain/usecases/netif.h"                          // IWYU pragma: keep
 #include "domain/usecases/wifiman.h"                        // IWYU pragma: keep
 #include "driver/i2c_types.h"                               // IWYU pragma: keep
@@ -70,6 +75,14 @@ typedef struct {
     dom_contracts_logger_leveled_t* logger;
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE */
 
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_ENABLE
+    dom_contracts_messaging_publish_t* messaging_publish;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_ENABLE
+    dom_contracts_messaging_subscribe_t* messaging_subscribe;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_ENABLE */
+
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
     dom_contracts_device_wifi_t* wifi;
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
@@ -89,6 +102,18 @@ typedef struct {
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE
     dom_contracts_repository_wifi_t* wifi_repository;
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE
+    dom_contracts_system_info_t* system_info;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE
+    dom_contracts_system_restart_t* system_restart;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE
+    dom_contracts_system_update_t* system_update;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE */
 } cmp_main_infrastructure_t;
 
 typedef struct {
