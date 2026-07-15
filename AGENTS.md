@@ -497,6 +497,29 @@ The WiFiMan STA reconnect task owns periodic reconnect scheduling.
 - If needed, it calls `try_reconnect`.
 - It owns FreeRTOS task creation, stop signaling, interval delay, and task deletion.
 
+### System Update & Restart Contracts
+
+The system update and restart contracts abstract the underlying partition flashing and board reboot logic.
+
+- **System Update**: The `dom_contracts_system_update_t` contract specifies partition flashing, image validation, and partition rollbacks. The ESP HTTPS implementation leverages the native `esp_http_client` and `esp_ota_ops` APIs to download and flash updates.
+- **System Restart**: The `dom_contracts_system_restart_t` contract specifies the system reboot mechanism. Its ESP implementation accepts a configurable delay in milliseconds, allowing the logger task or socket buffers to flush before calling `esp_restart()`.
+
+### OTA Application
+
+The OTA application orchestrates firmware update, partition validation, and fallback rollback flows.
+
+- It implements the `dom_usecases_ota_t` usecase.
+- It validates incoming metadata (URL, size, SHA256 checksum).
+- Upon successful execution of a partition update, it automatically requests a forced reboot (with a 5-second delay) through the system restart contract.
+
+### MQTT Presentation
+
+The MQTT presentation layer handles remote device management commands.
+
+- It routes subscription topics `/sub/{device_id_str}/reset` and `/sub/{device_id_str}/ota` to their respective settings and OTA usecases.
+- To prevent starving the MQTT client event loop, incoming OTA updates are spawned and run asynchronously in a separate FreeRTOS background task.
+- The MQTT client input/output buffer sizes are configurable via the composition layer (set to 4096 bytes by default).
+
 ## Build and Verification Notes
 
 Use ESP-IDF 6 for this project. The W5500 managed component currently requires `idf >=6.0`, so IDF 5.x is not a valid verification target for the active dependency set.
