@@ -34,6 +34,7 @@
 #define COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE
 #define COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE
 #define COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
+#define COMPOSITION_MAIN_CONFIG_DRIVER_SNTP_ENABLE
 
 /* Infrastructure Config Defines */
 
@@ -179,7 +180,6 @@ typedef struct {
         const char* ble_device_name;
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE */
 
-        /* MQTT Client */
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
         const int   mqtt_client_reconnect_timeout_ms;
         const char* mqtt_client_lwt_msg;
@@ -187,6 +187,10 @@ typedef struct {
         const bool  mqtt_client_lwt_retain;
         const int   mqtt_client_buffer_size;
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SNTP_ENABLE
+        const char* sntp_server;
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SNTP_ENABLE */
     } driver;
 
     struct infrastructure {

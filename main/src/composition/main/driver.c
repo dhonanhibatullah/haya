@@ -2,35 +2,38 @@
 
 #include <string.h>  // IWYU pragma: keep
 
-#include "composition/main/config.h"          // IWYU pragma: keep
-#include "composition/main/preloaded.h"       // IWYU pragma: keep
-#include "composition/main/utils.h"           // IWYU pragma: keep
-#include "domain/models/error.h"              // IWYU pragma: keep
-#include "domain/models/preloaded.h"          // IWYU pragma: keep
-#include "driver/gpio.h"                      // IWYU pragma: keep
-#include "driver/i2c_master.h"                // IWYU pragma: keep
-#include "driver/sdspi_host.h"                // IWYU pragma: keep
-#include "driver/spi_common.h"                // IWYU pragma: keep
-#include "driver/spi_master.h"                // IWYU pragma: keep
-#include "esp_err.h"                          // IWYU pragma: keep
-#include "esp_eth_driver.h"                   // IWYU pragma: keep
-#include "esp_eth_mac.h"                      // IWYU pragma: keep
-#include "esp_eth_mac_w5500.h"                // IWYU pragma: keep
-#include "esp_eth_phy.h"                      // IWYU pragma: keep
-#include "esp_eth_phy_w5500.h"                // IWYU pragma: keep
-#include "esp_event.h"                        // IWYU pragma: keep
-#include "esp_littlefs.h"                     // IWYU pragma: keep
-#include "esp_log.h"                          // IWYU pragma: keep
-#include "esp_netif.h"                        // IWYU pragma: keep
-#include "esp_vfs_fat.h"                      // IWYU pragma: keep
-#include "esp_wifi.h"                         // IWYU pragma: keep
-#include "hal/gpio_types.h"                   // IWYU pragma: keep
-#include "hal/i2c_types.h"                    // IWYU pragma: keep
-#include "hal/spi_types.h"                    // IWYU pragma: keep
-#include "mqtt_client.h"                      // IWYU pragma: keep
-#include "nimble/nimble_port.h"               // IWYU pragma: keep
-#include "nvs.h"                              // IWYU pragma: keep
-#include "nvs_flash.h"                        // IWYU pragma: keep
+#include "composition/main/config.h"     // IWYU pragma: keep
+#include "composition/main/preloaded.h"  // IWYU pragma: keep
+#include "composition/main/utils.h"      // IWYU pragma: keep
+#include "domain/models/error.h"         // IWYU pragma: keep
+#include "domain/models/preloaded.h"     // IWYU pragma: keep
+#include "driver/gpio.h"                 // IWYU pragma: keep
+#include "driver/i2c_master.h"           // IWYU pragma: keep
+#include "driver/sdspi_host.h"           // IWYU pragma: keep
+#include "driver/spi_common.h"           // IWYU pragma: keep
+#include "driver/spi_master.h"           // IWYU pragma: keep
+#include "esp_err.h"                     // IWYU pragma: keep
+#include "esp_eth_driver.h"              // IWYU pragma: keep
+#include "esp_eth_mac.h"                 // IWYU pragma: keep
+#include "esp_eth_mac_w5500.h"           // IWYU pragma: keep
+#include "esp_eth_phy.h"                 // IWYU pragma: keep
+#include "esp_eth_phy_w5500.h"           // IWYU pragma: keep
+#include "esp_event.h"                   // IWYU pragma: keep
+#include "esp_littlefs.h"                // IWYU pragma: keep
+#include "esp_log.h"                     // IWYU pragma: keep
+#include "esp_netif.h"                   // IWYU pragma: keep
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SNTP_ENABLE
+#include "esp_netif_sntp.h"  // IWYU pragma: keep
+#endif
+#include "esp_vfs_fat.h"                       // IWYU pragma: keep
+#include "esp_wifi.h"                          // IWYU pragma: keep
+#include "hal/gpio_types.h"                    // IWYU pragma: keep
+#include "hal/i2c_types.h"                     // IWYU pragma: keep
+#include "hal/spi_types.h"                     // IWYU pragma: keep
+#include "mqtt_client.h"                       // IWYU pragma: keep
+#include "nimble/nimble_port.h"                // IWYU pragma: keep
+#include "nvs.h"                               // IWYU pragma: keep
+#include "nvs_flash.h"                         // IWYU pragma: keep
 #include "presentation/http/route/netif.h"     // IWYU pragma: keep
 #include "presentation/http/route/settings.h"  // IWYU pragma: keep
 #include "presentation/http/route/wifiman.h"   // IWYU pragma: keep
@@ -61,6 +64,7 @@ static bool init_ethernet_w5500     = false;
 static bool init_ble                = false;
 static bool init_http_server        = false;
 static bool init_mqtt_client        = false;
+static bool init_sntp               = false;
 
 dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
     const char* tag = TAG_PATH "/init";
@@ -360,6 +364,24 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
     init_netif = true;
     ESP_LOGI(tag, "ESP Netif initialized");
 
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SNTP_ENABLE
+
+    ESP_LOGI(tag, "Initializing SNTP using server: %s", cmp_main_config.driver.sntp_server);
+    esp_sntp_config_t sntp_cfg          = ESP_NETIF_SNTP_DEFAULT_CONFIG(cmp_main_config.driver.sntp_server);
+    sntp_cfg.renew_servers_after_new_IP = true;
+    sntp_cfg.ip_event_to_renew          = IP_EVENT_STA_GOT_IP;
+
+    esp_err_t sntp_err = esp_netif_sntp_init(&sntp_cfg);
+    if (sntp_err != ESP_OK) {
+        ESP_LOGE(tag, "Failed to initialize SNTP: %s", esp_err_to_name(sntp_err));
+        cmp_main_driver_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_FAILURE;
+    }
+    init_sntp = true;
+    ESP_LOGI(tag, "SNTP initialized");
+
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SNTP_ENABLE */
+
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_NETIF_ENABLE */
 
     /* WiFi */
@@ -517,7 +539,6 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
     mqtt_cfg.buffer.size                    = cmp_main_config.driver.mqtt_client_buffer_size;
     mqtt_cfg.buffer.out_size                = cmp_main_config.driver.mqtt_client_buffer_size;
 
-
     if (cmp_main_utils_cstr_available(dom_models_preloaded_data.mqtt_user)) {
         mqtt_cfg.credentials.username = dom_models_preloaded_data.mqtt_user;
         if (cmp_main_utils_cstr_available(dom_models_preloaded_data.mqtt_pass)) {
@@ -548,6 +569,13 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
 }
 
 void cmp_main_driver_deinit(cmp_main_launcher_t* launcher) {
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_SNTP_ENABLE
+    if (init_sntp) {
+        esp_netif_sntp_deinit();
+        init_sntp = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_SNTP_ENABLE */
+
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
     const char* tag = TAG_PATH "/deinit";
 
