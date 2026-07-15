@@ -54,9 +54,25 @@ void cmp_main_launcher(void) {
 
     ESP_LOGI(tag, "Main composition initialized");
 
-    main_launcher.application.settings->restart(main_launcher.application.settings, dom_models_preloaded_data.system_restart_after_ms);
+    /* Startup Logic */
+
+    if (main_launcher.application.ota) {
+        err = main_launcher.application.ota->validate(main_launcher.application.ota);
+        if (err != DOMAIN_MODELS_ERROR_OK) {
+            ESP_LOGE(tag, "Failed to validate running partition: %s", dom_models_error_str(err));
+            (void)main_launcher.application.ota->rollback(main_launcher.application.ota);
+            goto fail;
+        }
+    }
+
+    if (main_launcher.application.settings) {
+        main_launcher.application.settings->restart(main_launcher.application.settings, dom_models_preloaded_data.system_restart_after_ms);
+    }
 
 fail:
+    if (init_application && main_launcher.application.ota) {
+        (void)main_launcher.application.ota->rollback(main_launcher.application.ota);
+    }
     if (init_presentation) {
         cmp_main_presentation_deinit(&main_launcher);
     }
