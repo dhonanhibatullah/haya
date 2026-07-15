@@ -4,6 +4,7 @@
 #include "domain/models/error.h"                           // IWYU pragma: keep
 #include "esp_err.h"                                       // IWYU pragma: keep
 #include "esp_log.h"                                       // IWYU pragma: keep
+#include "presentation/http/route/netif.h"                 // IWYU pragma: keep
 #include "presentation/http/route/wifiman.h"               // IWYU pragma: keep
 #include "presentation/task/wifiman_sta_reconnect/task.h"  // IWYU pragma: keep
 
@@ -11,6 +12,7 @@
 
 /* Init Flags for Deinitizalization Sequence */
 
+static bool init_netif_http_routes          = false;
 static bool init_wifiman_http_routes        = false;
 static bool init_wifiman_sta_reconnect_task = false;
 
@@ -21,6 +23,41 @@ dom_models_error_t cmp_main_presentation_init(cmp_main_launcher_t* launcher) {
         ESP_LOGE(tag, "Invalid launcher");
         return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
     }
+
+    /* Netif HTTP Routes */
+
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE
+
+#if !defined(COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE) || !defined(COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE)
+    ESP_LOGE(tag, "Netif HTTP dependencies are disabled");
+    cmp_main_presentation_deinit(launcher);
+    return DOMAIN_MODELS_ERROR_BAD_STATE;
+#else
+    if (!launcher->driver.http_server_handle || !launcher->application.netif) {
+        ESP_LOGE(tag, "Netif HTTP dependencies are not initialized");
+        cmp_main_presentation_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    launcher->presentation.netif_http_handler.netif = launcher->application.netif;
+
+    esp_err_t netif_http_err = pres_http_route_netif_register(
+        launcher->driver.http_server_handle,
+        &launcher->presentation.netif_http_handler
+    );
+    if (netif_http_err != ESP_OK) {
+        ESP_LOGE(tag, "Failed to register Netif HTTP routes: %s", esp_err_to_name(netif_http_err));
+        pres_http_route_netif_unregister(launcher->driver.http_server_handle);
+        launcher->presentation.netif_http_handler.netif = NULL;
+        cmp_main_presentation_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_FAILURE;
+    }
+
+    init_netif_http_routes = true;
+    ESP_LOGI(tag, "Netif HTTP routes registered");
+#endif /* Netif HTTP dependencies */
+
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE */
 
     /* WiFiMan HTTP Routes */
 
@@ -141,4 +178,17 @@ void cmp_main_presentation_deinit(cmp_main_launcher_t* launcher) {
         init_wifiman_http_routes                            = false;
     }
 #endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE
+    if (init_netif_http_routes) {
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE
+        esp_err_t err = pres_http_route_netif_unregister(launcher->driver.http_server_handle);
+        if (err != ESP_OK) {
+            ESP_LOGE(tag, "Failed to unregister Netif HTTP routes: %s", esp_err_to_name(err));
+        }
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE */
+        launcher->presentation.netif_http_handler.netif = NULL;
+        init_netif_http_routes                          = false;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE */
 }
