@@ -1,14 +1,16 @@
-#include "composition/main/preloaded.h"
+#include "composition/main/preloaded.h"  // IWYU pragma: keep
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>   // IWYU pragma: keep
+#include <stdlib.h>  // IWYU pragma: keep
+#include <string.h>  // IWYU pragma: keep
 
-#include "domain/models/error.h"
-#include "domain/models/preloaded.h"
-#include "esp_err.h"
-#include "esp_mac.h"
-#include "nvs.h"
+#include "composition/main/config.h"  // IWYU pragma: keep
+#include "domain/models/error.h"      // IWYU pragma: keep
+#include "domain/models/preloaded.h"  // IWYU pragma: keep
+#include "domain/models/wifi.h"       // IWYU pragma: keep
+#include "esp_err.h"                  // IWYU pragma: keep
+#include "esp_mac.h"                  // IWYU pragma: keep
+#include "nvs.h"                      // IWYU pragma: keep
 
 /* Default Values */
 
@@ -32,6 +34,9 @@ static dom_models_error_t load_default(void);
 static dom_models_error_t load_device_id(void);
 static dom_models_error_t load_string(char** out, const char* value);
 static dom_models_error_t load_nvs_string(nvs_handle_t nvs, const char* key, char** out);
+#ifdef DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+static dom_models_error_t apply_wifi_ap_ssid_device_id_suffix(void);
+#endif /* DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
 static dom_models_error_t error_from_esp(esp_err_t err);
 static uint64_t           device_id_from_base_mac(const uint8_t mac[6]);
 static void               clear_preloaded(void);
@@ -39,7 +44,14 @@ static void               clear_preloaded(void);
 /* Implementations */
 
 void cmp_main_preloaded_load_default() {
-    if (load_default() != DOMAIN_MODELS_ERROR_OK) {
+    dom_models_error_t err = load_default();
+#ifdef DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+    if (err == DOMAIN_MODELS_ERROR_OK) {
+        err = apply_wifi_ap_ssid_device_id_suffix();
+    }
+#endif /* DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
+
+    if (err != DOMAIN_MODELS_ERROR_OK) {
         clear_preloaded();
     }
 }
@@ -96,6 +108,14 @@ dom_models_error_t cmp_main_preloaded_load_from_nvs(nvs_handle_t nvs) {
         clear_preloaded();
         return err;
     }
+
+#ifdef DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+    err = apply_wifi_ap_ssid_device_id_suffix();
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        clear_preloaded();
+        return err;
+    }
+#endif /* DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
 
     return DOMAIN_MODELS_ERROR_OK;
 }
@@ -224,6 +244,41 @@ static dom_models_error_t load_nvs_string(nvs_handle_t nvs, const char* key, cha
 
     return DOMAIN_MODELS_ERROR_OK;
 }
+
+#ifdef DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+static dom_models_error_t apply_wifi_ap_ssid_device_id_suffix(void) {
+    if (!dom_models_preloaded_data.wifi_ap_ssid || !dom_models_preloaded_data.device_id_str) {
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    size_t ssid_len      = strlen(dom_models_preloaded_data.wifi_ap_ssid);
+    size_t device_id_len = strlen(dom_models_preloaded_data.device_id_str);
+    size_t suffix_len    = device_id_len + 1;
+    if (suffix_len > DOM_MODELS_WIFI_SSID_MAX_LEN) {
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    size_t ssid_max_len = DOM_MODELS_WIFI_SSID_MAX_LEN - suffix_len;
+    if (ssid_len > ssid_max_len) {
+        ssid_len = ssid_max_len;
+    }
+
+    size_t next_len = ssid_len + suffix_len + 1;
+    char*  next     = (char*)malloc(next_len);
+    if (!next) {
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    memcpy(next, dom_models_preloaded_data.wifi_ap_ssid, ssid_len);
+    next[ssid_len] = '_';
+    memcpy(next + ssid_len + 1, dom_models_preloaded_data.device_id_str, device_id_len + 1);
+
+    free(dom_models_preloaded_data.wifi_ap_ssid);
+    dom_models_preloaded_data.wifi_ap_ssid = next;
+
+    return DOMAIN_MODELS_ERROR_OK;
+}
+#endif /* DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
 
 static dom_models_error_t error_from_esp(esp_err_t err) {
     switch (err) {
