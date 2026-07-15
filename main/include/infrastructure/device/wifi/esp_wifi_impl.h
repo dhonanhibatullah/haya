@@ -1,0 +1,25 @@
+#ifndef INFRASTRUCTURE_DEVICE_WIFI_ESP_WIFI_IMPL_H
+#define INFRASTRUCTURE_DEVICE_WIFI_ESP_WIFI_IMPL_H
+
+#include <stdbool.h>
+
+#include "domain/contracts/device/wifi.h"
+#include "infrastructure/device/wifi/esp_wifi_impl_types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dom_contracts_device_wifi_t* inf_device_wifi_esp_wifi_impl_new(const inf_device_wifi_esp_wifi_impl_cfg_t* cfg);
+
+void inf_device_wifi_esp_wifi_impl_delete(dom_contracts_device_wifi_t* self);
+
+dom_models_error_t inf_device_wifi_esp_wifi_impl_init(dom_contracts_device_wifi_t* self);
+
+dom_models_error_t inf_device_wifi_esp_wifi_impl_deinit(dom_contracts_device_wifi_t* self);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* INFRASTRUCTURE_DEVICE_WIFI_ESP_WIFI_IMPL_H */
