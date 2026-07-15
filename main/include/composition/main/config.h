@@ -12,7 +12,7 @@
 
 /* Preloaded Config Defines */
 
-#define DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+#define COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
 
 /* Driver Config Defines */
 

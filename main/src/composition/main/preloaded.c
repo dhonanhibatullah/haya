@@ -34,9 +34,9 @@ static dom_models_error_t load_default(void);
 static dom_models_error_t load_device_id(void);
 static dom_models_error_t load_string(char** out, const char* value);
 static dom_models_error_t load_nvs_string(nvs_handle_t nvs, const char* key, char** out);
-#ifdef DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+#ifdef COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
 static dom_models_error_t apply_wifi_ap_ssid_device_id_suffix(void);
-#endif /* DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
+#endif /* COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
 static dom_models_error_t error_from_esp(esp_err_t err);
 static uint64_t           device_id_from_base_mac(const uint8_t mac[6]);
 static void               clear_preloaded(void);
@@ -45,11 +45,11 @@ static void               clear_preloaded(void);
 
 void cmp_main_preloaded_load_default() {
     dom_models_error_t err = load_default();
-#ifdef DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+#ifdef COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
     if (err == DOMAIN_MODELS_ERROR_OK) {
         err = apply_wifi_ap_ssid_device_id_suffix();
     }
-#endif /* DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
+#endif /* COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
 
     if (err != DOMAIN_MODELS_ERROR_OK) {
         clear_preloaded();
@@ -109,13 +109,13 @@ dom_models_error_t cmp_main_preloaded_load_from_nvs(nvs_handle_t nvs) {
         return err;
     }
 
-#ifdef DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+#ifdef COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
     err = apply_wifi_ap_ssid_device_id_suffix();
     if (err != DOMAIN_MODELS_ERROR_OK) {
         clear_preloaded();
         return err;
     }
-#endif /* DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
+#endif /* COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
 
     return DOMAIN_MODELS_ERROR_OK;
 }
@@ -245,7 +245,7 @@ static dom_models_error_t load_nvs_string(nvs_handle_t nvs, const char* key, cha
     return DOMAIN_MODELS_ERROR_OK;
 }
 
-#ifdef DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
+#ifdef COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
 static dom_models_error_t apply_wifi_ap_ssid_device_id_suffix(void) {
     if (!dom_models_preloaded_data.wifi_ap_ssid || !dom_models_preloaded_data.device_id_str) {
         return DOMAIN_MODELS_ERROR_BAD_STATE;
@@ -278,7 +278,7 @@ static dom_models_error_t apply_wifi_ap_ssid_device_id_suffix(void) {
 
     return DOMAIN_MODELS_ERROR_OK;
 }
-#endif /* DOMAIN_MODELS_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
+#endif /* COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID */
 
 static dom_models_error_t error_from_esp(esp_err_t err) {
     switch (err) {
