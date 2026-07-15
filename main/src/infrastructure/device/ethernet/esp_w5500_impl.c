@@ -23,6 +23,7 @@ static void on_eth_stop(inf_device_ethernet_esp_w5500_impl_ctx_t* ctx);
 static void on_eth_connected(inf_device_ethernet_esp_w5500_impl_ctx_t* ctx);
 static void on_eth_disconnected(inf_device_ethernet_esp_w5500_impl_ctx_t* ctx);
 static void on_eth_got_ip(inf_device_ethernet_esp_w5500_impl_ctx_t* ctx, const ip_event_got_ip_t* event);
+static void on_eth_lost_ip(inf_device_ethernet_esp_w5500_impl_ctx_t* ctx);
 
 /* Helper Function Prototypes */
 
@@ -188,13 +189,26 @@ dom_models_error_t inf_device_ethernet_esp_w5500_impl_init(dom_contracts_device_
             IP_EVENT_ETH_GOT_IP,
             ip_event_handler,
             ctx,
-            &ctx->ip_event_handler
+            &ctx->ip_got_event_handler
         );
         if (err != ESP_OK) {
             (void)inf_device_ethernet_esp_w5500_impl_deinit(self);
             return inf_device_ethernet_esp_w5500_impl_error_from_esp(err);
         }
-        ctx->ip_event_handler_registered = true;
+        ctx->ip_got_event_handler_registered = true;
+
+        err = esp_event_handler_instance_register(
+            IP_EVENT,
+            IP_EVENT_ETH_LOST_IP,
+            ip_event_handler,
+            ctx,
+            &ctx->ip_lost_event_handler
+        );
+        if (err != ESP_OK) {
+            (void)inf_device_ethernet_esp_w5500_impl_deinit(self);
+            return inf_device_ethernet_esp_w5500_impl_error_from_esp(err);
+        }
+        ctx->ip_lost_event_handler_registered = true;
     }
 
     ctx->initialized = true;
@@ -217,15 +231,27 @@ dom_models_error_t inf_device_ethernet_esp_w5500_impl_deinit(dom_contracts_devic
         }
     }
 
-    if (ctx->ip_event_handler_registered) {
-        esp_err_t err = esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, ctx->ip_event_handler);
+    if (ctx->ip_lost_event_handler_registered) {
+        esp_err_t err = esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_ETH_LOST_IP, ctx->ip_lost_event_handler);
         if (err != ESP_OK) {
             if (result == DOMAIN_MODELS_ERROR_OK) {
                 result = inf_device_ethernet_esp_w5500_impl_error_from_esp(err);
             }
         } else {
-            ctx->ip_event_handler_registered = false;
-            ctx->ip_event_handler            = NULL;
+            ctx->ip_lost_event_handler_registered = false;
+            ctx->ip_lost_event_handler            = NULL;
+        }
+    }
+
+    if (ctx->ip_got_event_handler_registered) {
+        esp_err_t err = esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, ctx->ip_got_event_handler);
+        if (err != ESP_OK) {
+            if (result == DOMAIN_MODELS_ERROR_OK) {
+                result = inf_device_ethernet_esp_w5500_impl_error_from_esp(err);
+            }
+        } else {
+            ctx->ip_got_event_handler_registered = false;
+            ctx->ip_got_event_handler            = NULL;
         }
     }
 
@@ -593,11 +619,20 @@ static void eth_event_handler(void* arg, esp_event_base_t base, int32_t id, void
 }
 
 static void ip_event_handler(void* arg, esp_event_base_t base, int32_t id, void* data) {
-    if (!arg || base != IP_EVENT || id != IP_EVENT_ETH_GOT_IP) {
+    if (!arg || base != IP_EVENT) {
         return;
     }
 
-    on_eth_got_ip(arg, data);
+    switch (id) {
+        case IP_EVENT_ETH_GOT_IP:
+            on_eth_got_ip(arg, data);
+            break;
+        case IP_EVENT_ETH_LOST_IP:
+            on_eth_lost_ip(arg);
+            break;
+        default:
+            break;
+    }
 }
 
 static void on_eth_start(inf_device_ethernet_esp_w5500_impl_ctx_t* ctx) {
@@ -643,6 +678,14 @@ static void on_eth_got_ip(inf_device_ethernet_esp_w5500_impl_ctx_t* ctx, const i
     }
 
     dispatch_event(ctx, DOM_MODELS_ETHERNET_EVENT_GOT_IP, event ? (uint32_t)event->ip_changed : 0);
+}
+
+static void on_eth_lost_ip(inf_device_ethernet_esp_w5500_impl_ctx_t* ctx) {
+    if (!ctx) {
+        return;
+    }
+
+    dispatch_event(ctx, DOM_MODELS_ETHERNET_EVENT_LOST_IP, 0);
 }
 
 /* Helper Function Implementations */

@@ -42,11 +42,13 @@ typedef struct {
     esp_netif_t*                             netif;
     esp_eth_netif_glue_handle_t              netif_glue;
     esp_event_handler_instance_t             eth_event_handler;
-    esp_event_handler_instance_t             ip_event_handler;
+    esp_event_handler_instance_t             ip_got_event_handler;
+    esp_event_handler_instance_t             ip_lost_event_handler;
     bool                                     initialized;
     bool                                     netif_attached;
     bool                                     eth_event_handler_registered;
-    bool                                     ip_event_handler_registered;
+    bool                                     ip_got_event_handler_registered;
+    bool                                     ip_lost_event_handler_registered;
     bool                                     started;
     bool                                     link_up;
     bool                                     promiscuous;

@@ -80,6 +80,7 @@ typedef enum {
     DOM_MODELS_ETHERNET_EVENT_LINK_UP,
     DOM_MODELS_ETHERNET_EVENT_LINK_DOWN,
     DOM_MODELS_ETHERNET_EVENT_GOT_IP,
+    DOM_MODELS_ETHERNET_EVENT_LOST_IP,
 } dom_models_ethernet_event_type_t;
 
 typedef struct {
