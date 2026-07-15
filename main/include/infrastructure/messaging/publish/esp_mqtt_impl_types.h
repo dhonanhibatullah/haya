@@ -30,6 +30,7 @@ typedef struct {
 
 typedef struct {
     inf_messaging_publish_esp_mqtt_impl_cfg_t cfg;
+    bool                                      connected;
 } inf_messaging_publish_esp_mqtt_impl_ctx_t;
 
 #ifdef __cplusplus

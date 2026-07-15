@@ -17,6 +17,7 @@ typedef struct {
     dom_models_messaging_registration_t registration;
     dom_models_messaging_status_t       status;
     dom_models_messaging_log_t          log;
+    bool                                connected;
 } inf_messaging_publish_stub_impl_cfg_t;
 
 #define INF_MESSAGING_PUBLISH_STUB_IMPL_CFG_DEFAULT() \
@@ -24,6 +25,7 @@ typedef struct {
         .registration_available = false,              \
         .status_available       = false,              \
         .log_available          = false,              \
+        .connected              = true,               \
     }
 
 typedef struct {
@@ -36,6 +38,7 @@ typedef struct {
     size_t                              registration_publish_cnt;
     size_t                              status_publish_cnt;
     size_t                              log_publish_cnt;
+    bool                                connected;
 } inf_messaging_publish_stub_impl_ctx_t;
 
 #ifdef __cplusplus

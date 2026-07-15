@@ -1,6 +1,7 @@
 #ifndef DOMAIN_CONTRACTS_MESSAGING_PUBLISH_H
 #define DOMAIN_CONTRACTS_MESSAGING_PUBLISH_H
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "domain/models/error.h"
@@ -25,6 +26,10 @@ struct dom_contracts_messaging_publish_t {
     dom_models_error_t (*send_log)(
         dom_contracts_messaging_publish_t* self,
         const dom_models_messaging_log_t*  log
+    );
+    dom_models_error_t (*is_connected)(
+        dom_contracts_messaging_publish_t* self,
+        bool*                              out
     );
 };
 

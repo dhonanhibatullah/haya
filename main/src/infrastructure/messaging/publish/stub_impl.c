@@ -21,6 +21,10 @@ static dom_models_error_t send_log_impl(
     dom_contracts_messaging_publish_t* self,
     const dom_models_messaging_log_t*  log
 );
+static dom_models_error_t is_connected_impl(
+    dom_contracts_messaging_publish_t* self,
+    bool*                              out
+);
 
 /* Constructor and Destructor */
 
@@ -48,6 +52,7 @@ dom_contracts_messaging_publish_t* inf_messaging_publish_stub_impl_new(
     self->send_registration = send_registration_impl;
     self->send_status       = send_status_impl;
     self->send_log          = send_log_impl;
+    self->is_connected      = is_connected_impl;
 
     return self;
 }
@@ -94,4 +99,18 @@ static dom_models_error_t send_log_impl(
     }
 
     return inf_messaging_publish_stub_impl_set_log(self->ctx, log);
+}
+
+static dom_models_error_t is_connected_impl(
+    dom_contracts_messaging_publish_t* self,
+    bool*                              out
+) {
+    if (!self || !self->ctx || !out) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    inf_messaging_publish_stub_impl_ctx_t* ctx = self->ctx;
+    *out                                         = ctx->connected;
+
+    return DOMAIN_MODELS_ERROR_OK;
 }

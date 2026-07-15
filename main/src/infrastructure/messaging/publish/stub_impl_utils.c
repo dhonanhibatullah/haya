@@ -40,6 +40,7 @@ dom_models_error_t inf_messaging_publish_stub_impl_load_cfg(
     ctx->registration_publish_cnt = 0;
     ctx->status_publish_cnt       = 0;
     ctx->log_publish_cnt          = 0;
+    ctx->connected                = cfg->connected;
 
     return DOMAIN_MODELS_ERROR_OK;
 }
