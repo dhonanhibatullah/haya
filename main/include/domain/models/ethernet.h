@@ -12,11 +12,11 @@ extern "C" {
 
 #define DOM_MODELS_ETHERNET_MAC_LEN 6
 
-#define DOM_MODELS_ETHERNET_CAPABILITY_SET_MAC         (1u << 0)
-#define DOM_MODELS_ETHERNET_CAPABILITY_LINK_CONFIG     (1u << 1)
-#define DOM_MODELS_ETHERNET_CAPABILITY_PROMISCUOUS     (1u << 2)
-#define DOM_MODELS_ETHERNET_CAPABILITY_FLOW_CONTROL    (1u << 3)
-#define DOM_MODELS_ETHERNET_CAPABILITY_PHY_LOOPBACK    (1u << 4)
+#define DOM_MODELS_ETHERNET_CAPABILITY_SET_MAC      (1u << 0)
+#define DOM_MODELS_ETHERNET_CAPABILITY_LINK_CONFIG  (1u << 1)
+#define DOM_MODELS_ETHERNET_CAPABILITY_PROMISCUOUS  (1u << 2)
+#define DOM_MODELS_ETHERNET_CAPABILITY_FLOW_CONTROL (1u << 3)
+#define DOM_MODELS_ETHERNET_CAPABILITY_PHY_LOOPBACK (1u << 4)
 
 typedef enum {
     DOM_MODELS_ETHERNET_SPEED_UNKNOWN = 0,
@@ -36,10 +36,10 @@ typedef struct {
 } dom_models_ethernet_capabilities_t;
 
 typedef struct {
-    bool    if_key_available;
-    char    if_key[DOM_MODELS_NETWORK_IF_KEY_LEN];
-    bool    started;
-    bool    link_up;
+    bool if_key_available;
+    char if_key[DOM_MODELS_NETWORK_IF_KEY_LEN];
+    bool started;
+    bool link_up;
 
     bool    mac_available;
     uint8_t mac[DOM_MODELS_ETHERNET_MAC_LEN];
