@@ -24,6 +24,7 @@
 #include "mqtt_client.h"                                    // IWYU pragma: keep
 #include "nvs.h"                                            // IWYU pragma: keep
 #include "presentation/http/handler/netif_types.h"          // IWYU pragma: keep
+#include "presentation/http/handler/settings_types.h"       // IWYU pragma: keep
 #include "presentation/http/handler/wifiman_types.h"        // IWYU pragma: keep
 #include "presentation/task/wifiman_sta_reconnect/types.h"  // IWYU pragma: keep
 #include "sdmmc_cmd.h"                                      // IWYU pragma: keep
@@ -135,6 +136,10 @@ typedef struct {
 #ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE
     pres_http_handler_netif_t netif_http_handler;
 #endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_SETTINGS_ENABLE
+    pres_http_handler_settings_t settings_http_handler;
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_SETTINGS_ENABLE */
 
 #ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE
     pres_http_handler_wifiman_t wifiman_http_handler;

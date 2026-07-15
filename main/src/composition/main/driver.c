@@ -31,12 +31,13 @@
 #include "nimble/nimble_port.h"               // IWYU pragma: keep
 #include "nvs.h"                              // IWYU pragma: keep
 #include "nvs_flash.h"                        // IWYU pragma: keep
-#include "presentation/http/route/netif.h"    // IWYU pragma: keep
-#include "presentation/http/route/wifiman.h"  // IWYU pragma: keep
-#include "sdmmc_cmd.h"                        // IWYU pragma: keep
-#include "services/gap/ble_svc_gap.h"         // IWYU pragma: keep
-#include "services/gatt/ble_svc_gatt.h"       // IWYU pragma: keep
-#include "soc/clk_tree_defs.h"                // IWYU pragma: keep
+#include "presentation/http/route/netif.h"     // IWYU pragma: keep
+#include "presentation/http/route/settings.h"  // IWYU pragma: keep
+#include "presentation/http/route/wifiman.h"   // IWYU pragma: keep
+#include "sdmmc_cmd.h"                         // IWYU pragma: keep
+#include "services/gap/ble_svc_gap.h"          // IWYU pragma: keep
+#include "services/gatt/ble_svc_gatt.h"        // IWYU pragma: keep
+#include "soc/clk_tree_defs.h"                 // IWYU pragma: keep
 
 #define TAG_PATH "main"
 
@@ -474,6 +475,9 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
 #ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE
     http_server_cfg.max_uri_handlers += pres_http_route_netif_route_cnt();
 #endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_NETIF_ENABLE */
+#ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_SETTINGS_ENABLE
+    http_server_cfg.max_uri_handlers += pres_http_route_settings_route_cnt();
+#endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_SETTINGS_ENABLE */
 #ifdef COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE
     http_server_cfg.max_uri_handlers += pres_http_route_wifiman_route_cnt();
 #endif /* COMPOSITION_MAIN_CONFIG_PRESENTATION_HTTP_WIFIMAN_ENABLE */
