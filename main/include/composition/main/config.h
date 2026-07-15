@@ -10,7 +10,7 @@
 #include "hal/spi_types.h"         // IWYU pragma: keep
 #include "soc/gpio_num.h"          // IWYU pragma: keep
 
-/* Preloaded Config Defines */
+/* Misc. Config Defines */
 
 #define COMPOSITION_MAIN_CONFIG_PRELOADED_WIFI_AP_SSID_USE_DEVICE_ID
 

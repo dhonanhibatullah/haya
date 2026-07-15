@@ -12,8 +12,6 @@
 
 #define TAG_PATH "main/launcher"
 
-static cmp_main_launcher_t main_launcher;
-
 void cmp_main_launcher(void) {
     const char* tag = TAG_PATH;
 
@@ -22,6 +20,7 @@ void cmp_main_launcher(void) {
     bool init_application    = false;
     bool init_presentation   = false;
 
+    cmp_main_launcher_t main_launcher;
     memset(&main_launcher, 0, sizeof(cmp_main_launcher_t));
 
     dom_models_error_t err = cmp_main_driver_init(&main_launcher);
@@ -54,7 +53,7 @@ void cmp_main_launcher(void) {
 
     ESP_LOGI(tag, "Main composition initialized");
 
-    return;
+    main_launcher.application.settings->restart(main_launcher.application.settings, 0xFFFFFFFF);
 
 fail:
     if (init_presentation) {

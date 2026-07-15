@@ -80,7 +80,8 @@ struct dom_usecases_settings_t {
         bool*                    out
     );
     dom_models_error_t (*restart)(
-        dom_usecases_settings_t* self
+        dom_usecases_settings_t* self,
+        uint32_t                 delay_ms
     );
 };
 

@@ -100,7 +100,7 @@ esp_err_t pres_http_handler_settings_restart(httpd_req_t* req) {
         return http_err;
     }
 
-    (void)handler->settings->restart(handler->settings);
+    (void)handler->settings->restart(handler->settings, 0);
 
     return ESP_OK;
 }
