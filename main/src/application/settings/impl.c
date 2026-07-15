@@ -243,7 +243,7 @@ static dom_models_error_t restart_impl(dom_usecases_settings_t* self) {
         return err;
     }
 
-    err = ctx->cfg.system_restart->restart(ctx->cfg.system_restart);
+    err = ctx->cfg.system_restart->restart(ctx->cfg.system_restart, 0);
     if (err != DOMAIN_MODELS_ERROR_OK) {
         ctx->cfg.logger->error(ctx->cfg.logger, tag, "Failed to restart system: %s (%d)", dom_models_error_str(err), (int)err);
         return err;

@@ -8,6 +8,7 @@
 #include "domain/models/error.h"
 #include "domain/usecases/ota.h"
 
+
 #define BASE_TAG "ota"
 
 /* Helper Function Prototypes */
@@ -115,7 +116,7 @@ static dom_models_error_t update_impl(
     ctx->updating = true;
     ctx->cfg.logger->info(ctx->cfg.logger, tag, "Starting OTA update from URL: %s", update_info->firmware_url);
 
-    err = ctx->cfg.update->update(ctx->cfg.update, update_info);
+    err           = ctx->cfg.update->update(ctx->cfg.update, update_info);
     ctx->updating = false;
 
     if (err != DOMAIN_MODELS_ERROR_OK) {
@@ -123,7 +124,10 @@ static dom_models_error_t update_impl(
         return err;
     }
 
-    ctx->cfg.logger->info(ctx->cfg.logger, tag, "OTA update completed successfully");
+    ctx->cfg.logger->info(ctx->cfg.logger, tag, "OTA update completed successfully. System will restart in 5 seconds...");
+
+    (void)ctx->cfg.restart->restart(ctx->cfg.restart, 5000);
+
     return DOMAIN_MODELS_ERROR_OK;
 }
 

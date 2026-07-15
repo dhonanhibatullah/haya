@@ -154,21 +154,24 @@ dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
 #ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_OTA_ENABLE
 
 #if !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE) || \
-    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE)
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE) || \
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE)
     ESP_LOGE(tag, "OTA dependencies are disabled");
     cmp_main_application_deinit(launcher);
     return DOMAIN_MODELS_ERROR_BAD_STATE;
 #else
     if (!launcher->infrastructure.logger ||
-        !launcher->infrastructure.system_update) {
+        !launcher->infrastructure.system_update ||
+        !launcher->infrastructure.system_restart) {
         ESP_LOGE(tag, "OTA dependencies are not initialized");
         cmp_main_application_deinit(launcher);
         return DOMAIN_MODELS_ERROR_BAD_STATE;
     }
 
     app_ota_impl_cfg_t ota_cfg = {
-        .logger = launcher->infrastructure.logger,
-        .update = launcher->infrastructure.system_update,
+        .logger  = launcher->infrastructure.logger,
+        .update  = launcher->infrastructure.system_update,
+        .restart = launcher->infrastructure.system_restart,
     };
     launcher->application.ota = app_ota_impl_new(&ota_cfg);
     if (!launcher->application.ota) {

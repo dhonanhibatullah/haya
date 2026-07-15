@@ -1,6 +1,7 @@
 #ifndef DOMAIN_CONTRACTS_SYSTEM_RESTART_H
 #define DOMAIN_CONTRACTS_SYSTEM_RESTART_H
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "domain/models/error.h"
@@ -14,7 +15,8 @@ typedef struct dom_contracts_system_restart_t dom_contracts_system_restart_t;
 struct dom_contracts_system_restart_t {
     void* ctx;
     dom_models_error_t (*restart)(
-        dom_contracts_system_restart_t* self
+        dom_contracts_system_restart_t* self,
+        uint32_t                        delay_ms
     );
 };
 

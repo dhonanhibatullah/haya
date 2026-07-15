@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "domain/contracts/logger/leveled.h"
+#include "domain/contracts/system/restart.h"
 #include "domain/contracts/system/update.h"
 
 #ifdef __cplusplus
@@ -12,7 +13,8 @@ extern "C" {
 
 typedef struct {
     dom_contracts_logger_leveled_t* logger;
-    dom_contracts_system_update_t* update;
+    dom_contracts_system_update_t*  update;
+    dom_contracts_system_restart_t* restart;
 } app_ota_impl_cfg_t;
 
 typedef struct {

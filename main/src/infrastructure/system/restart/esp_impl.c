@@ -6,12 +6,15 @@
 #include "domain/contracts/system/restart.h"
 #include "domain/models/error.h"
 #include "esp_system.h"
+#include "freertos/FreeRTOS.h"  // IWYU pragma: keep
+#include "freertos/task.h"
 #include "infrastructure/system/restart/esp_impl_utils.h"
 
 /* Contract Function Prototypes */
 
 static dom_models_error_t restart_impl(
-    dom_contracts_system_restart_t* self
+    dom_contracts_system_restart_t* self,
+    uint32_t                        delay_ms
 );
 
 /* Constructor and Destructor */
@@ -52,10 +55,15 @@ void inf_system_restart_esp_impl_delete(dom_contracts_system_restart_t* self) {
 /* Contract Function Implementations */
 
 static dom_models_error_t restart_impl(
-    dom_contracts_system_restart_t* self
+    dom_contracts_system_restart_t* self,
+    uint32_t                        delay_ms
 ) {
     if (!self || !self->ctx) {
         return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    if (delay_ms > 0) {
+        vTaskDelay(pdMS_TO_TICKS(delay_ms));
     }
 
     esp_restart();
