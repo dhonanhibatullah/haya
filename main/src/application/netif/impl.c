@@ -14,7 +14,7 @@
 /* Helper Function Prototypes */
 
 static dom_models_error_t get_ctx(
-    dom_usecases_netif_t* self,
+    dom_usecases_netif_t*  self,
     app_netif_impl_ctx_t** out
 );
 
@@ -36,7 +36,7 @@ static dom_models_error_t get_ethernet_impl(
 /* Constructor and Destructor */
 
 dom_usecases_netif_t* app_netif_impl_new(const app_netif_impl_cfg_t* cfg) {
-    const char* tag = BASE_TAG"/new";
+    const char* tag = BASE_TAG "/new";
 
     dom_models_error_t err = app_netif_impl_validate_cfg(cfg);
     if (err != DOMAIN_MODELS_ERROR_OK) {
@@ -68,7 +68,7 @@ dom_usecases_netif_t* app_netif_impl_new(const app_netif_impl_cfg_t* cfg) {
 }
 
 void app_netif_impl_delete(dom_usecases_netif_t* self) {
-    const char* tag = BASE_TAG"/delete";
+    const char* tag = BASE_TAG "/delete";
 
     if (!self) {
         return;
@@ -89,7 +89,7 @@ static dom_models_error_t get_all_impl(
     dom_usecases_netif_t* self,
     dom_models_network_t* out
 ) {
-    const char* tag = BASE_TAG"/get_all";
+    const char* tag = BASE_TAG "/get_all";
 
     app_netif_impl_ctx_t* ctx = NULL;
     dom_models_error_t    err = get_ctx(self, &ctx);
@@ -118,7 +118,7 @@ static dom_models_error_t get_wifi_sta_impl(
     dom_usecases_netif_t*           self,
     dom_models_network_interface_t* out
 ) {
-    const char* tag = BASE_TAG"/get_wifi_sta";
+    const char* tag = BASE_TAG "/get_wifi_sta";
 
     app_netif_impl_ctx_t* ctx = NULL;
     dom_models_error_t    err = get_ctx(self, &ctx);
@@ -147,7 +147,7 @@ static dom_models_error_t get_ethernet_impl(
     dom_usecases_netif_t*           self,
     dom_models_network_interface_t* out
 ) {
-    const char* tag = BASE_TAG"/get_ethernet";
+    const char* tag = BASE_TAG "/get_ethernet";
 
     app_netif_impl_ctx_t* ctx = NULL;
     dom_models_error_t    err = get_ctx(self, &ctx);
@@ -175,7 +175,7 @@ static dom_models_error_t get_ethernet_impl(
 /* Helper Function Implementations */
 
 static dom_models_error_t get_ctx(
-    dom_usecases_netif_t* self,
+    dom_usecases_netif_t*  self,
     app_netif_impl_ctx_t** out
 ) {
     if (!self || !self->ctx || !out) {
