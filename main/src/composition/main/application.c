@@ -1,17 +1,19 @@
 #include "composition/main/application.h"  // IWYU pragma: keep
 
-#include "application/netif/impl.h"    // IWYU pragma: keep
-#include "application/wifiman/impl.h"  // IWYU pragma: keep
-#include "composition/main/config.h"   // IWYU pragma: keep
-#include "domain/models/error.h"       // IWYU pragma: keep
-#include "esp_log.h"                   // IWYU pragma: keep
+#include "application/netif/impl.h"     // IWYU pragma: keep
+#include "application/settings/impl.h"  // IWYU pragma: keep
+#include "application/wifiman/impl.h"   // IWYU pragma: keep
+#include "composition/main/config.h"    // IWYU pragma: keep
+#include "domain/models/error.h"        // IWYU pragma: keep
+#include "esp_log.h"                    // IWYU pragma: keep
 
 #define TAG_PATH "main/application"
 
 /* Init Flags for Deinitizalization Sequence */
 
-static bool init_netif   = false;
-static bool init_wifiman = false;
+static bool init_settings = false;
+static bool init_netif    = false;
+static bool init_wifiman  = false;
 
 dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
     const char* tag = TAG_PATH "/init";
@@ -21,6 +23,44 @@ dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
         return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
     }
 
+    /* Settings */
+
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_SETTINGS_ENABLE
+
+#if !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE) ||      \
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE) ||      \
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE) ||               \
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE)
+    ESP_LOGE(tag, "Settings dependencies are disabled");
+    return DOMAIN_MODELS_ERROR_BAD_STATE;
+#else
+    if (!launcher->infrastructure.logger ||
+        !launcher->infrastructure.preloaded_repository ||
+        !launcher->infrastructure.system_info ||
+        !launcher->infrastructure.system_restart) {
+        ESP_LOGE(tag, "Settings dependencies are not initialized");
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    app_settings_impl_cfg_t settings_cfg = {
+        .logger               = launcher->infrastructure.logger,
+        .preloaded_repository = launcher->infrastructure.preloaded_repository,
+        .system_info          = launcher->infrastructure.system_info,
+        .system_restart       = launcher->infrastructure.system_restart,
+    };
+    launcher->application.settings = app_settings_impl_new(&settings_cfg);
+    if (!launcher->application.settings) {
+        ESP_LOGE(tag, "Failed to create Settings");
+        cmp_main_application_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_settings = true;
+    ESP_LOGI(tag, "Settings created");
+#endif /* Settings dependencies */
+
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_SETTINGS_ENABLE */
+
     /* Netif */
 
 #ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE
@@ -28,11 +68,13 @@ dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
 #if !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE) || \
     !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE)
     ESP_LOGE(tag, "Netif dependencies are disabled");
+    cmp_main_application_deinit(launcher);
     return DOMAIN_MODELS_ERROR_BAD_STATE;
 #else
     if (!launcher->infrastructure.logger ||
         !launcher->infrastructure.network_interface) {
         ESP_LOGE(tag, "Netif dependencies are not initialized");
+        cmp_main_application_deinit(launcher);
         return DOMAIN_MODELS_ERROR_BAD_STATE;
     }
 
@@ -63,6 +105,7 @@ dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
     !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE) || \
     !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_WIFI_ENABLE)
     ESP_LOGE(tag, "WiFiMan dependencies are disabled");
+    cmp_main_application_deinit(launcher);
     return DOMAIN_MODELS_ERROR_BAD_STATE;
 #else
     if (!launcher->infrastructure.logger ||
@@ -71,6 +114,7 @@ dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
         !launcher->infrastructure.preloaded_repository ||
         !launcher->infrastructure.wifi_repository) {
         ESP_LOGE(tag, "WiFiMan dependencies are not initialized");
+        cmp_main_application_deinit(launcher);
         return DOMAIN_MODELS_ERROR_BAD_STATE;
     }
 
@@ -136,4 +180,14 @@ void cmp_main_application_deinit(cmp_main_launcher_t* launcher) {
         launcher->application.netif = NULL;
     }
 #endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_SETTINGS_ENABLE
+    if (init_settings) {
+        init_settings = false;
+    }
+    if (launcher->application.settings) {
+        app_settings_impl_delete(launcher->application.settings);
+        launcher->application.settings = NULL;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_SETTINGS_ENABLE */
 }

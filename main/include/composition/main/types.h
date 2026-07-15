@@ -14,6 +14,7 @@
 #include "domain/contracts/system/restart.h"                // IWYU pragma: keep
 #include "domain/contracts/system/update.h"                 // IWYU pragma: keep
 #include "domain/usecases/netif.h"                          // IWYU pragma: keep
+#include "domain/usecases/settings.h"                       // IWYU pragma: keep
 #include "domain/usecases/wifiman.h"                        // IWYU pragma: keep
 #include "driver/i2c_types.h"                               // IWYU pragma: keep
 #include "esp_eth_driver.h"                                 // IWYU pragma: keep
@@ -117,6 +118,10 @@ typedef struct {
 } cmp_main_infrastructure_t;
 
 typedef struct {
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_SETTINGS_ENABLE
+    dom_usecases_settings_t* settings;
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_SETTINGS_ENABLE */
+
 #ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE
     dom_usecases_netif_t* netif;
 #endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE */

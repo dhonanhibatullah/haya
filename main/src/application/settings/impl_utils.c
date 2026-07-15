@@ -1,0 +1,146 @@
+#include "application/settings/impl_utils.h"
+
+#include <stdbool.h>
+#include <string.h>
+
+#include "application/settings/impl_types.h"
+#include "domain/contracts/repository/preloaded.h"
+#include "domain/contracts/system/info.h"
+#include "domain/models/error.h"
+#include "domain/usecases/settings.h"
+
+/* Helper Function Prototypes */
+
+static bool has_preloaded_repository_functions(dom_contracts_repository_preloaded_t* preloaded_repository);
+static bool has_system_info_functions(dom_contracts_system_info_t* system_info);
+static bool has_system_restart_functions(dom_contracts_system_restart_t* system_restart);
+
+dom_models_error_t app_settings_impl_validate_cfg(const app_settings_impl_cfg_t* cfg) {
+    if (!cfg ||
+        !cfg->logger ||
+        !cfg->logger->error ||
+        !cfg->logger->info ||
+        !has_preloaded_repository_functions(cfg->preloaded_repository) ||
+        !has_system_info_functions(cfg->system_info) ||
+        !has_system_restart_functions(cfg->system_restart)) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    return DOMAIN_MODELS_ERROR_OK;
+}
+
+dom_models_error_t app_settings_impl_load_snapshot(
+    app_settings_impl_ctx_t*          ctx,
+    dom_usecases_settings_snapshot_t* out
+) {
+    dom_models_error_t err = DOMAIN_MODELS_ERROR_OK;
+
+    if (!ctx || !out) {
+        return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
+    }
+
+    memset(out, 0, sizeof(dom_usecases_settings_snapshot_t));
+
+    err = ctx->cfg.preloaded_repository->get_device_id(ctx->cfg.preloaded_repository, &out->device_id);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.preloaded_repository->get_device_id_str(ctx->cfg.preloaded_repository, out->device_id_str, sizeof(out->device_id_str));
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.preloaded_repository->get_wifi_ap_ssid(ctx->cfg.preloaded_repository, out->wifi_ap_ssid, sizeof(out->wifi_ap_ssid));
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.preloaded_repository->get_wifi_ap_pass(ctx->cfg.preloaded_repository, out->wifi_ap_pass, sizeof(out->wifi_ap_pass));
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.preloaded_repository->get_mqtt_proto(ctx->cfg.preloaded_repository, out->mqtt_proto, sizeof(out->mqtt_proto));
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.preloaded_repository->get_mqtt_host(ctx->cfg.preloaded_repository, out->mqtt_host, sizeof(out->mqtt_host));
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.preloaded_repository->get_mqtt_port(ctx->cfg.preloaded_repository, out->mqtt_port, sizeof(out->mqtt_port));
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.preloaded_repository->get_mqtt_user(ctx->cfg.preloaded_repository, out->mqtt_user, sizeof(out->mqtt_user));
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.preloaded_repository->get_mqtt_pass(ctx->cfg.preloaded_repository, out->mqtt_pass, sizeof(out->mqtt_pass));
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.system_info->get_project_info(ctx->cfg.system_info, &out->project);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    err = ctx->cfg.system_info->get_chip_info(ctx->cfg.system_info, &out->chip);
+    if (err != DOMAIN_MODELS_ERROR_OK) {
+        return err;
+    }
+
+    out->restart_required = ctx->restart_required;
+
+    return DOMAIN_MODELS_ERROR_OK;
+}
+
+bool app_settings_impl_has_preloaded_update(const dom_usecases_settings_preloaded_update_t* update) {
+    return update &&
+           (update->wifi_ap_ssid_set ||
+            update->wifi_ap_pass_set ||
+            update->mqtt_proto_set ||
+            update->mqtt_host_set ||
+            update->mqtt_port_set ||
+            update->mqtt_user_set ||
+            update->mqtt_pass_set);
+}
+
+/* Helper Function Implementations */
+
+static bool has_preloaded_repository_functions(dom_contracts_repository_preloaded_t* preloaded_repository) {
+    return preloaded_repository &&
+           preloaded_repository->get_device_id &&
+           preloaded_repository->get_device_id_str &&
+           preloaded_repository->get_wifi_ap_ssid &&
+           preloaded_repository->set_wifi_ap_ssid &&
+           preloaded_repository->get_wifi_ap_pass &&
+           preloaded_repository->set_wifi_ap_pass &&
+           preloaded_repository->get_mqtt_proto &&
+           preloaded_repository->set_mqtt_proto &&
+           preloaded_repository->get_mqtt_host &&
+           preloaded_repository->set_mqtt_host &&
+           preloaded_repository->get_mqtt_port &&
+           preloaded_repository->set_mqtt_port &&
+           preloaded_repository->get_mqtt_user &&
+           preloaded_repository->set_mqtt_user &&
+           preloaded_repository->get_mqtt_pass &&
+           preloaded_repository->set_mqtt_pass;
+}
+
+static bool has_system_info_functions(dom_contracts_system_info_t* system_info) {
+    return system_info &&
+           system_info->get_project_info &&
+           system_info->get_chip_info;
+}
+
+static bool has_system_restart_functions(dom_contracts_system_restart_t* system_restart) {
+    return system_restart &&
+           system_restart->restart;
+}
