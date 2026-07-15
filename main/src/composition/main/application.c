@@ -1,5 +1,6 @@
 #include "composition/main/application.h"  // IWYU pragma: keep
 
+#include "application/netif/impl.h"    // IWYU pragma: keep
 #include "application/wifiman/impl.h"  // IWYU pragma: keep
 #include "composition/main/config.h"   // IWYU pragma: keep
 #include "domain/models/error.h"       // IWYU pragma: keep
@@ -9,6 +10,7 @@
 
 /* Init Flags for Deinitizalization Sequence */
 
+static bool init_netif   = false;
 static bool init_wifiman = false;
 
 dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
@@ -18,6 +20,38 @@ dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
         ESP_LOGE(tag, "Invalid launcher");
         return DOMAIN_MODELS_ERROR_BAD_ARGUMENT;
     }
+
+    /* Netif */
+
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE
+
+#if !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE) || \
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE)
+    ESP_LOGE(tag, "Netif dependencies are disabled");
+    return DOMAIN_MODELS_ERROR_BAD_STATE;
+#else
+    if (!launcher->infrastructure.logger ||
+        !launcher->infrastructure.network_interface) {
+        ESP_LOGE(tag, "Netif dependencies are not initialized");
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    app_netif_impl_cfg_t netif_cfg = {
+        .logger            = launcher->infrastructure.logger,
+        .network_interface = launcher->infrastructure.network_interface,
+    };
+    launcher->application.netif = app_netif_impl_new(&netif_cfg);
+    if (!launcher->application.netif) {
+        ESP_LOGE(tag, "Failed to create Netif");
+        cmp_main_application_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_netif = true;
+    ESP_LOGI(tag, "Netif created");
+#endif /* Netif dependencies */
+
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE */
 
     /* WiFiMan */
 
@@ -92,4 +126,14 @@ void cmp_main_application_deinit(cmp_main_launcher_t* launcher) {
         launcher->application.wifiman = NULL;
     }
 #endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE
+    if (init_netif) {
+        init_netif = false;
+    }
+    if (launcher->application.netif) {
+        app_netif_impl_delete(launcher->application.netif);
+        launcher->application.netif = NULL;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE */
 }

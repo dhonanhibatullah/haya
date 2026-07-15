@@ -51,6 +51,7 @@
 
 /* Application Config Defines */
 
+#define COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE
 #define COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE
 
 /* Presentation Config Defines */

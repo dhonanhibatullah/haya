@@ -8,6 +8,7 @@
 #include "domain/contracts/network/interface.h"             // IWYU pragma: keep
 #include "domain/contracts/repository/preloaded.h"          // IWYU pragma: keep
 #include "domain/contracts/repository/wifi.h"               // IWYU pragma: keep
+#include "domain/usecases/netif.h"                          // IWYU pragma: keep
 #include "domain/usecases/wifiman.h"                        // IWYU pragma: keep
 #include "driver/i2c_types.h"                               // IWYU pragma: keep
 #include "esp_eth_driver.h"                                 // IWYU pragma: keep
@@ -87,6 +88,10 @@ typedef struct {
 } cmp_main_infrastructure_t;
 
 typedef struct {
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE
+    dom_usecases_netif_t* netif;
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_NETIF_ENABLE */
+
 #ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE
     dom_usecases_wifiman_t* wifiman;
 #endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE */
