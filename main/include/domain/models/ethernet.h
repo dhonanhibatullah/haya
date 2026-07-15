@@ -73,6 +73,22 @@ typedef struct {
     dom_models_ethernet_duplex_t duplex;
 } dom_models_ethernet_link_config_t;
 
+typedef enum {
+    DOM_MODELS_ETHERNET_EVENT_UNKNOWN = 0,
+    DOM_MODELS_ETHERNET_EVENT_STARTED,
+    DOM_MODELS_ETHERNET_EVENT_STOPPED,
+    DOM_MODELS_ETHERNET_EVENT_LINK_UP,
+    DOM_MODELS_ETHERNET_EVENT_LINK_DOWN,
+    DOM_MODELS_ETHERNET_EVENT_GOT_IP,
+} dom_models_ethernet_event_type_t;
+
+typedef struct {
+    dom_models_ethernet_event_type_t type;
+    uint32_t                         driver_status;
+} dom_models_ethernet_event_t;
+
+typedef void (*dom_models_ethernet_event_callback_t)(void* cb_ctx, const dom_models_ethernet_event_t* event);
+
 #ifdef __cplusplus
 }
 #endif

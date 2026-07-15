@@ -2,6 +2,7 @@
 #define COMPOSITION_MAIN_TYPES_H
 
 #include "config.h"                                         // IWYU pragma: keep
+#include "domain/contracts/device/ethernet.h"               // IWYU pragma: keep
 #include "domain/contracts/device/wifi.h"                   // IWYU pragma: keep
 #include "domain/contracts/logger/leveled.h"                // IWYU pragma: keep
 #include "domain/contracts/network/interface.h"             // IWYU pragma: keep
@@ -67,6 +68,10 @@ typedef struct {
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
     dom_contracts_device_wifi_t* wifi;
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_ENABLE
+    dom_contracts_device_ethernet_t* ethernet;
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_ENABLE */
 
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE
     dom_contracts_network_interface_t* network_interface;

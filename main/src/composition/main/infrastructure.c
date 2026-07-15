@@ -4,6 +4,8 @@
 #include "domain/models/error.h"                              // IWYU pragma: keep
 #include "domain/models/preloaded.h"                          // IWYU pragma: keep
 #include "esp_log.h"                                          // IWYU pragma: keep
+#include "infrastructure/device/ethernet/esp_w5500_impl.h"    // IWYU pragma: keep
+#include "infrastructure/device/ethernet/stub_impl.h"         // IWYU pragma: keep
 #include "infrastructure/device/wifi/esp_wifi_impl.h"         // IWYU pragma: keep
 #include "infrastructure/device/wifi/stub_impl.h"             // IWYU pragma: keep
 #include "infrastructure/logger/leveled/stdio_impl.h"         // IWYU pragma: keep
@@ -20,6 +22,7 @@
 
 static bool init_logger               = false;
 static bool init_wifi                 = false;
+static bool init_ethernet             = false;
 static bool init_network_interface    = false;
 static bool init_preloaded_repository = false;
 static bool init_wifi_repository      = false;
@@ -89,6 +92,55 @@ dom_models_error_t cmp_main_infrastructure_init(cmp_main_launcher_t* launcher) {
     ESP_LOGI(tag, "WiFi device initialized");
 
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
+
+    /* Ethernet Device */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_ENABLE
+
+#if defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500) && \
+    (!defined(COMPOSITION_MAIN_CONFIG_DRIVER_ETHERNET_ENABLE) || !defined(COMPOSITION_MAIN_CONFIG_DRIVER_ETHERNET_USE_W5500))
+    ESP_LOGE(tag, "W5500 Ethernet infrastructure requires W5500 Ethernet driver");
+    cmp_main_infrastructure_deinit(launcher);
+    return DOMAIN_MODELS_ERROR_BAD_STATE;
+#else
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500
+    inf_device_ethernet_esp_w5500_impl_cfg_t ethernet_cfg = {
+        .eth_handle                = launcher->driver.ethernet_w5500_handle,
+        .if_key                    = cmp_main_config.infrastructure.ethernet_esp_w5500_if_key,
+        .if_desc                   = cmp_main_config.infrastructure.ethernet_esp_w5500_if_desc,
+        .route_prio                = cmp_main_config.infrastructure.ethernet_esp_w5500_route_prio,
+        .attach_netif_glue         = cmp_main_config.infrastructure.ethernet_esp_w5500_attach_netif_glue,
+        .register_event_handler    = cmp_main_config.infrastructure.ethernet_esp_w5500_register_event_handler,
+        .register_ip_event_handler = cmp_main_config.infrastructure.ethernet_esp_w5500_register_ip_event_handler,
+    };
+    launcher->infrastructure.ethernet = inf_device_ethernet_esp_w5500_impl_new(&ethernet_cfg);
+#else
+    inf_device_ethernet_stub_impl_cfg_t ethernet_cfg = INF_DEVICE_ETHERNET_STUB_IMPL_CFG_DEFAULT();
+    launcher->infrastructure.ethernet                 = inf_device_ethernet_stub_impl_new(&ethernet_cfg);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500 */
+
+    if (!launcher->infrastructure.ethernet) {
+        ESP_LOGE(tag, "Failed to create Ethernet device");
+        cmp_main_infrastructure_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500
+    dom_models_error_t ethernet_err = inf_device_ethernet_esp_w5500_impl_init(launcher->infrastructure.ethernet);
+#else
+    dom_models_error_t ethernet_err = inf_device_ethernet_stub_impl_init(launcher->infrastructure.ethernet);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500 */
+    if (ethernet_err != DOMAIN_MODELS_ERROR_OK) {
+        ESP_LOGE(tag, "Failed to initialize Ethernet device: %s", dom_models_error_str(ethernet_err));
+        cmp_main_infrastructure_deinit(launcher);
+        return ethernet_err;
+    }
+
+    init_ethernet = true;
+    ESP_LOGI(tag, "Ethernet device initialized");
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500 dependency */
+
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_ENABLE */
 
     /* Network Interface */
 
@@ -218,6 +270,25 @@ void cmp_main_infrastructure_deinit(cmp_main_launcher_t* launcher) {
         init_network_interface                     = false;
     }
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_ENABLE
+    if (init_ethernet) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500
+        inf_device_ethernet_esp_w5500_impl_deinit(launcher->infrastructure.ethernet);
+#else
+        inf_device_ethernet_stub_impl_deinit(launcher->infrastructure.ethernet);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500 */
+        init_ethernet = false;
+    }
+    if (launcher->infrastructure.ethernet) {
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500
+        inf_device_ethernet_esp_w5500_impl_delete(launcher->infrastructure.ethernet);
+#else
+        inf_device_ethernet_stub_impl_delete(launcher->infrastructure.ethernet);
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500 */
+        launcher->infrastructure.ethernet = NULL;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_ENABLE */
 
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE
     if (init_wifi) {

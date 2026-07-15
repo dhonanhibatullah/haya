@@ -133,6 +133,17 @@ const cmp_main_config_t cmp_main_config = {
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_USE_ESP_WIFI */
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_WIFI_ENABLE */
 
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_ENABLE
+#ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500
+        .ethernet_esp_w5500_if_key                    = "ETH_DEF",
+        .ethernet_esp_w5500_if_desc                   = "eth",
+        .ethernet_esp_w5500_route_prio                = 50,
+        .ethernet_esp_w5500_attach_netif_glue         = true,
+        .ethernet_esp_w5500_register_event_handler    = true,
+        .ethernet_esp_w5500_register_ip_event_handler = true,
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500 */
+#endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_ENABLE */
+
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_ENABLE
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_NETWORK_INTERFACE_USE_ESP_NETIF
         .network_interface_esp_netif_sta_if_key = "WIFI_STA_DEF",
