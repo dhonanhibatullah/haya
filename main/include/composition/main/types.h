@@ -59,6 +59,9 @@ typedef struct {
 
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
     esp_mqtt_client_handle_t mqtt_client_handle;
+    char*                    mqtt_client_url;
+    char*                    mqtt_client_id;
+    char*                    mqtt_client_lwt_topic;
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
 } cmp_main_driver_t;
 

@@ -4,7 +4,9 @@
 
 #include "composition/main/config.h"          // IWYU pragma: keep
 #include "composition/main/preloaded.h"       // IWYU pragma: keep
+#include "composition/main/utils.h"           // IWYU pragma: keep
 #include "domain/models/error.h"              // IWYU pragma: keep
+#include "domain/models/preloaded.h"          // IWYU pragma: keep
 #include "driver/gpio.h"                      // IWYU pragma: keep
 #include "driver/i2c_master.h"                // IWYU pragma: keep
 #include "driver/sdspi_host.h"                // IWYU pragma: keep
@@ -25,6 +27,7 @@
 #include "hal/gpio_types.h"                   // IWYU pragma: keep
 #include "hal/i2c_types.h"                    // IWYU pragma: keep
 #include "hal/spi_types.h"                    // IWYU pragma: keep
+#include "mqtt_client.h"                      // IWYU pragma: keep
 #include "nimble/nimble_port.h"               // IWYU pragma: keep
 #include "nvs.h"                              // IWYU pragma: keep
 #include "nvs_flash.h"                        // IWYU pragma: keep
@@ -487,14 +490,79 @@ dom_models_error_t cmp_main_driver_init(cmp_main_launcher_t* launcher) {
 
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE */
 
+    /* MQTT Client */
+
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
+
+    dom_models_error_t mqtt_err = cmp_main_utils_mqtt_prepare_runtime(launcher);
+    if (mqtt_err != DOMAIN_MODELS_ERROR_OK) {
+        ESP_LOGE(tag, "Failed to prepare MQTT client: %s", dom_models_error_str(mqtt_err));
+        cmp_main_driver_deinit(launcher);
+        return mqtt_err;
+    }
+
+    esp_mqtt_client_config_t mqtt_cfg       = {0};
+    mqtt_cfg.broker.address.uri             = launcher->driver.mqtt_client_url;
+    mqtt_cfg.credentials.client_id          = launcher->driver.mqtt_client_id;
+    mqtt_cfg.network.disable_auto_reconnect = false;
+    mqtt_cfg.network.reconnect_timeout_ms   = cmp_main_config.driver.mqtt_client_reconnect_timeout_ms;
+    mqtt_cfg.session.last_will.topic        = launcher->driver.mqtt_client_lwt_topic;
+    mqtt_cfg.session.last_will.msg          = cmp_main_config.driver.mqtt_client_lwt_msg;
+    mqtt_cfg.session.last_will.qos          = cmp_main_config.driver.mqtt_client_lwt_qos;
+    mqtt_cfg.session.last_will.retain       = cmp_main_config.driver.mqtt_client_lwt_retain;
+
+    if (cmp_main_utils_cstr_available(dom_models_preloaded_data.mqtt_user)) {
+        mqtt_cfg.credentials.username = dom_models_preloaded_data.mqtt_user;
+        if (cmp_main_utils_cstr_available(dom_models_preloaded_data.mqtt_pass)) {
+            mqtt_cfg.credentials.authentication.password = dom_models_preloaded_data.mqtt_pass;
+        }
+    }
+
+    launcher->driver.mqtt_client_handle = esp_mqtt_client_init(&mqtt_cfg);
+    if (!launcher->driver.mqtt_client_handle) {
+        ESP_LOGE(tag, "Failed to initialize MQTT client");
+        cmp_main_driver_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_FAILURE;
+    }
+
+    err = esp_mqtt_client_start(launcher->driver.mqtt_client_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(tag, "Failed to start MQTT client: %s", esp_err_to_name(err));
+        cmp_main_driver_deinit(launcher);
+        return cmp_main_utils_mqtt_error_from_esp(err);
+    }
+
+    init_mqtt_client = true;
+    ESP_LOGI(tag, "MQTT client started");
+
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
+
     return DOMAIN_MODELS_ERROR_OK;
 }
 
 void cmp_main_driver_deinit(cmp_main_launcher_t* launcher) {
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
-    if (init_mqtt_client) {
+    const char* tag = TAG_PATH "/deinit";
+
+    if (init_mqtt_client && launcher->driver.mqtt_client_handle) {
+        esp_err_t err = esp_mqtt_client_stop(launcher->driver.mqtt_client_handle);
+        if (err != ESP_OK) {
+            ESP_LOGE(tag, "Failed to stop MQTT client: %s", esp_err_to_name(err));
+        }
+
         init_mqtt_client = false;
     }
+
+    if (launcher->driver.mqtt_client_handle) {
+        esp_err_t err = esp_mqtt_client_destroy(launcher->driver.mqtt_client_handle);
+        if (err != ESP_OK) {
+            ESP_LOGE(tag, "Failed to destroy MQTT client: %s", esp_err_to_name(err));
+        }
+
+        launcher->driver.mqtt_client_handle = NULL;
+    }
+
+    cmp_main_utils_mqtt_clear_runtime(launcher);
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
 
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_HTTP_SERVER_ENABLE

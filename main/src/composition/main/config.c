@@ -118,6 +118,14 @@ const cmp_main_config_t cmp_main_config = {
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE
         .ble_device_name = "haya",
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE */
+
+/* MQTT Client */
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
+        .mqtt_client_reconnect_timeout_ms = 10000,
+        .mqtt_client_lwt_msg              = "offline",
+        .mqtt_client_lwt_qos              = 1,
+        .mqtt_client_lwt_retain           = true,
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
     },
     .infrastructure = {
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE

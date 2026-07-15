@@ -164,6 +164,14 @@ typedef struct {
 #ifdef COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE
         const char* ble_device_name;
 #endif /* COMPOSITION_MAIN_CONFIG_DRIVER_BLE_ENABLE */
+
+        /* MQTT Client */
+#ifdef COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE
+        const int   mqtt_client_reconnect_timeout_ms;
+        const char* mqtt_client_lwt_msg;
+        const int   mqtt_client_lwt_qos;
+        const bool  mqtt_client_lwt_retain;
+#endif /* COMPOSITION_MAIN_CONFIG_DRIVER_MQTT_CLIENT_ENABLE */
     } driver;
 
     struct infrastructure {
