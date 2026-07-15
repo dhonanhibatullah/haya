@@ -14,6 +14,7 @@
 #include "domain/contracts/system/restart.h"                // IWYU pragma: keep
 #include "domain/contracts/system/update.h"                 // IWYU pragma: keep
 #include "domain/usecases/netif.h"                          // IWYU pragma: keep
+#include "domain/usecases/ota.h"                            // IWYU pragma: keep
 #include "domain/usecases/settings.h"                       // IWYU pragma: keep
 #include "domain/usecases/wifiman.h"                        // IWYU pragma: keep
 #include "driver/i2c_types.h"                               // IWYU pragma: keep
@@ -130,6 +131,10 @@ typedef struct {
 #ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE
     dom_usecases_wifiman_t* wifiman;
 #endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE */
+
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_OTA_ENABLE
+    dom_usecases_ota_t* ota;
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_OTA_ENABLE */
 } cmp_main_application_t;
 
 typedef struct {

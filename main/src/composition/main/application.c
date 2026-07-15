@@ -1,6 +1,7 @@
 #include "composition/main/application.h"  // IWYU pragma: keep
 
 #include "application/netif/impl.h"     // IWYU pragma: keep
+#include "application/ota/impl.h"       // IWYU pragma: keep
 #include "application/settings/impl.h"  // IWYU pragma: keep
 #include "application/wifiman/impl.h"   // IWYU pragma: keep
 #include "composition/main/config.h"    // IWYU pragma: keep
@@ -14,6 +15,7 @@
 static bool init_settings = false;
 static bool init_netif    = false;
 static bool init_wifiman  = false;
+static bool init_ota      = false;
 
 dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
     const char* tag = TAG_PATH "/init";
@@ -27,9 +29,9 @@ dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
 
 #ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_SETTINGS_ENABLE
 
-#if !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE) ||      \
-    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE) ||      \
-    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE) ||               \
+#if !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE) || \
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_REPOSITORY_PRELOADED_ENABLE) || \
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_INFO_ENABLE) ||          \
     !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_ENABLE)
     ESP_LOGE(tag, "Settings dependencies are disabled");
     return DOMAIN_MODELS_ERROR_BAD_STATE;
@@ -147,6 +149,40 @@ dom_models_error_t cmp_main_application_init(cmp_main_launcher_t* launcher) {
 
 #endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE */
 
+    /* OTA */
+
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_OTA_ENABLE
+
+#if !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_LOGGER_LEVELED_STDIO_ENABLE) || \
+    !defined(COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_UPDATE_ENABLE)
+    ESP_LOGE(tag, "OTA dependencies are disabled");
+    cmp_main_application_deinit(launcher);
+    return DOMAIN_MODELS_ERROR_BAD_STATE;
+#else
+    if (!launcher->infrastructure.logger ||
+        !launcher->infrastructure.system_update) {
+        ESP_LOGE(tag, "OTA dependencies are not initialized");
+        cmp_main_application_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_BAD_STATE;
+    }
+
+    app_ota_impl_cfg_t ota_cfg = {
+        .logger = launcher->infrastructure.logger,
+        .update = launcher->infrastructure.system_update,
+    };
+    launcher->application.ota = app_ota_impl_new(&ota_cfg);
+    if (!launcher->application.ota) {
+        ESP_LOGE(tag, "Failed to create OTA");
+        cmp_main_application_deinit(launcher);
+        return DOMAIN_MODELS_ERROR_MALLOC_FAILED;
+    }
+
+    init_ota = true;
+    ESP_LOGI(tag, "OTA created");
+#endif /* OTA dependencies */
+
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_OTA_ENABLE */
+
     return DOMAIN_MODELS_ERROR_OK;
 }
 
@@ -156,6 +192,16 @@ void cmp_main_application_deinit(cmp_main_launcher_t* launcher) {
     if (!launcher) {
         return;
     }
+
+#ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_OTA_ENABLE
+    if (init_ota) {
+        init_ota = false;
+    }
+    if (launcher->application.ota) {
+        app_ota_impl_delete(launcher->application.ota);
+        launcher->application.ota = NULL;
+    }
+#endif /* COMPOSITION_MAIN_CONFIG_APPLICATION_OTA_ENABLE */
 
 #ifdef COMPOSITION_MAIN_CONFIG_APPLICATION_WIFIMAN_ENABLE
     if (init_wifiman) {
