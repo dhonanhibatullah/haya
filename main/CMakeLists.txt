@@ -28,6 +28,7 @@ idf_component_register(
         esp_event
         esp_netif
         esp_http_server
+        esp_http_client
         esp_https_ota
         fatfs
         app_update
