@@ -6,8 +6,6 @@ The project goal is currently empty
 
 This file describes the active project structure and the patterns that must be preserved when adding or changing features. The `Project Goals` section above is intentionally the first section so teams can reuse this repository as a template and replace only that section with project-specific goals.
 
-The active project lives under `main/include` and `main/src`.
-
 ## Architecture Overview
 
 This project follows a layered C architecture for ESP-IDF firmware:
