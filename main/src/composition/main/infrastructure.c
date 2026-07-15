@@ -1,28 +1,28 @@
 #include "composition/main/infrastructure.h"  // IWYU pragma: keep
 
-#include "composition/main/config.h"                          // IWYU pragma: keep
-#include "domain/models/error.h"                              // IWYU pragma: keep
-#include "domain/models/preloaded.h"                          // IWYU pragma: keep
-#include "esp_log.h"                                          // IWYU pragma: keep
-#include "infrastructure/device/ethernet/esp_w5500_impl.h"    // IWYU pragma: keep
-#include "infrastructure/device/ethernet/stub_impl.h"         // IWYU pragma: keep
-#include "infrastructure/device/wifi/esp_wifi_impl.h"         // IWYU pragma: keep
-#include "infrastructure/device/wifi/stub_impl.h"             // IWYU pragma: keep
-#include "infrastructure/logger/leveled/stdio_impl.h"         // IWYU pragma: keep
-#include "infrastructure/messaging/publish/esp_mqtt_impl.h"   // IWYU pragma: keep
-#include "infrastructure/messaging/publish/stub_impl.h"       // IWYU pragma: keep
-#include "infrastructure/messaging/subscribe/esp_mqtt_impl.h" // IWYU pragma: keep
-#include "infrastructure/messaging/subscribe/stub_impl.h"     // IWYU pragma: keep
-#include "infrastructure/network/interface/esp_netif_impl.h"  // IWYU pragma: keep
-#include "infrastructure/network/interface/stub_impl.h"       // IWYU pragma: keep
-#include "infrastructure/repository/preloaded/nvs_impl.h"     // IWYU pragma: keep
-#include "infrastructure/repository/preloaded/stub_impl.h"    // IWYU pragma: keep
-#include "infrastructure/repository/wifi/nvs_impl.h"          // IWYU pragma: keep
-#include "infrastructure/repository/wifi/stub_impl.h"         // IWYU pragma: keep
-#include "infrastructure/system/info/esp_impl.h"              // IWYU pragma: keep
-#include "infrastructure/system/restart/esp_impl.h"           // IWYU pragma: keep
-#include "infrastructure/system/update/esp_https_impl.h"      // IWYU pragma: keep
-#include "infrastructure/system/update/stub_impl.h"           // IWYU pragma: keep
+#include "composition/main/config.h"                           // IWYU pragma: keep
+#include "domain/models/error.h"                               // IWYU pragma: keep
+#include "domain/models/preloaded.h"                           // IWYU pragma: keep
+#include "esp_log.h"                                           // IWYU pragma: keep
+#include "infrastructure/device/ethernet/esp_w5500_impl.h"     // IWYU pragma: keep
+#include "infrastructure/device/ethernet/stub_impl.h"          // IWYU pragma: keep
+#include "infrastructure/device/wifi/esp_wifi_impl.h"          // IWYU pragma: keep
+#include "infrastructure/device/wifi/stub_impl.h"              // IWYU pragma: keep
+#include "infrastructure/logger/leveled/stdio_impl.h"          // IWYU pragma: keep
+#include "infrastructure/messaging/publish/esp_mqtt_impl.h"    // IWYU pragma: keep
+#include "infrastructure/messaging/publish/stub_impl.h"        // IWYU pragma: keep
+#include "infrastructure/messaging/subscribe/esp_mqtt_impl.h"  // IWYU pragma: keep
+#include "infrastructure/messaging/subscribe/stub_impl.h"      // IWYU pragma: keep
+#include "infrastructure/network/interface/esp_netif_impl.h"   // IWYU pragma: keep
+#include "infrastructure/network/interface/stub_impl.h"        // IWYU pragma: keep
+#include "infrastructure/repository/preloaded/nvs_impl.h"      // IWYU pragma: keep
+#include "infrastructure/repository/preloaded/stub_impl.h"     // IWYU pragma: keep
+#include "infrastructure/repository/wifi/nvs_impl.h"           // IWYU pragma: keep
+#include "infrastructure/repository/wifi/stub_impl.h"          // IWYU pragma: keep
+#include "infrastructure/system/info/esp_impl.h"               // IWYU pragma: keep
+#include "infrastructure/system/restart/esp_impl.h"            // IWYU pragma: keep
+#include "infrastructure/system/update/esp_https_impl.h"       // IWYU pragma: keep
+#include "infrastructure/system/update/stub_impl.h"            // IWYU pragma: keep
 
 #define TAG_PATH "main/infrastructure"
 
@@ -104,7 +104,7 @@ dom_models_error_t cmp_main_infrastructure_init(cmp_main_launcher_t* launcher) {
 
 #ifdef COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_SYSTEM_RESTART_USE_ESP
     inf_system_restart_esp_impl_cfg_t system_restart_cfg = INF_SYSTEM_RESTART_ESP_IMPL_CFG_DEFAULT();
-    launcher->infrastructure.system_restart = inf_system_restart_esp_impl_new(&system_restart_cfg);
+    launcher->infrastructure.system_restart              = inf_system_restart_esp_impl_new(&system_restart_cfg);
 #else
     ESP_LOGE(tag, "No system restart infrastructure backend configured");
     cmp_main_infrastructure_deinit(launcher);
@@ -174,7 +174,7 @@ dom_models_error_t cmp_main_infrastructure_init(cmp_main_launcher_t* launcher) {
     launcher->infrastructure.messaging_publish = inf_messaging_publish_esp_mqtt_impl_new(&messaging_publish_cfg);
 #else
     inf_messaging_publish_stub_impl_cfg_t messaging_publish_cfg = INF_MESSAGING_PUBLISH_STUB_IMPL_CFG_DEFAULT();
-    launcher->infrastructure.messaging_publish                = inf_messaging_publish_stub_impl_new(&messaging_publish_cfg);
+    launcher->infrastructure.messaging_publish                  = inf_messaging_publish_stub_impl_new(&messaging_publish_cfg);
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_PUBLISH_USE_ESP_MQTT */
 
     if (!launcher->infrastructure.messaging_publish) {
@@ -208,7 +208,7 @@ dom_models_error_t cmp_main_infrastructure_init(cmp_main_launcher_t* launcher) {
     launcher->infrastructure.messaging_subscribe = inf_messaging_subscribe_esp_mqtt_impl_new(&messaging_subscribe_cfg);
 #else
     inf_messaging_subscribe_stub_impl_cfg_t messaging_subscribe_cfg = INF_MESSAGING_SUBSCRIBE_STUB_IMPL_CFG_DEFAULT();
-    launcher->infrastructure.messaging_subscribe                = inf_messaging_subscribe_stub_impl_new(&messaging_subscribe_cfg);
+    launcher->infrastructure.messaging_subscribe                    = inf_messaging_subscribe_stub_impl_new(&messaging_subscribe_cfg);
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_MESSAGING_SUBSCRIBE_USE_ESP_MQTT */
 
     if (!launcher->infrastructure.messaging_subscribe) {
@@ -284,7 +284,7 @@ dom_models_error_t cmp_main_infrastructure_init(cmp_main_launcher_t* launcher) {
     launcher->infrastructure.ethernet = inf_device_ethernet_esp_w5500_impl_new(&ethernet_cfg);
 #else
     inf_device_ethernet_stub_impl_cfg_t ethernet_cfg = INF_DEVICE_ETHERNET_STUB_IMPL_CFG_DEFAULT();
-    launcher->infrastructure.ethernet                 = inf_device_ethernet_stub_impl_new(&ethernet_cfg);
+    launcher->infrastructure.ethernet                = inf_device_ethernet_stub_impl_new(&ethernet_cfg);
 #endif /* COMPOSITION_MAIN_CONFIG_INFRASTRUCTURE_DEVICE_ETHERNET_USE_ESP_W5500 */
 
     if (!launcher->infrastructure.ethernet) {
