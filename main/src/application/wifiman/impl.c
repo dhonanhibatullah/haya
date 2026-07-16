@@ -257,9 +257,10 @@ static dom_models_error_t stop_impl(
         return err;
     }
 
-    ctx->auto_reconnect_enabled          = false;
-    ctx->sta_connection_commit_required = false;
-    ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+    ctx->auto_reconnect_enabled             = false;
+    ctx->sta_connection_commit_required     = false;
+    ctx->ap_enabled_by_reconnect_threshold = false;
+    ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
     unregister_wifi_event_callback(ctx);
 
     if (!ctx->started) {
@@ -446,8 +447,9 @@ static dom_models_error_t connect_sta_impl(
     dom_models_wifi_sta_connect_config_t config;
     app_wifiman_impl_credential_to_connect_config(&config, credential);
 
-    ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_INITIAL;
-    ctx->sta_connection_commit_required = false;
+    ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_INITIAL;
+    ctx->sta_connection_commit_required    = false;
+    ctx->ap_enabled_by_reconnect_threshold = false;
 
     err = ctx->cfg.wifi->connect_sta(ctx->cfg.wifi, &config);
     if (err != DOMAIN_MODELS_ERROR_OK) {
@@ -502,8 +504,9 @@ static dom_models_error_t connect_stored_sta_impl(
     dom_models_wifi_sta_connect_config_t config;
     app_wifiman_impl_credential_to_connect_config(&config, &credential);
 
-    ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_INITIAL;
-    ctx->sta_connection_commit_required = false;
+    ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_INITIAL;
+    ctx->sta_connection_commit_required    = false;
+    ctx->ap_enabled_by_reconnect_threshold = false;
 
     err = ctx->cfg.wifi->connect_sta(ctx->cfg.wifi, &config);
     if (err != DOMAIN_MODELS_ERROR_OK) {
@@ -536,10 +539,11 @@ static dom_models_error_t disconnect_sta_impl(
         dom_models_wifi_status_t status;
         dom_models_error_t       status_err = ctx->cfg.wifi->get_status(ctx->cfg.wifi, &status);
         if (status_err == DOMAIN_MODELS_ERROR_OK && !status.connected) {
-            ctx->auto_reconnect_enabled          = false;
-            ctx->sta_connection_commit_required = false;
-            ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
-            ctx->reconnect_trial_count          = 0;
+            ctx->auto_reconnect_enabled             = false;
+            ctx->sta_connection_commit_required     = false;
+            ctx->ap_enabled_by_reconnect_threshold = false;
+            ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+            ctx->reconnect_trial_count             = 0;
             if (ctx->cfg.ap_auto_manage_enabled) {
                 err = ensure_apsta(ctx, tag);
                 if (err != DOMAIN_MODELS_ERROR_OK) {
@@ -554,10 +558,11 @@ static dom_models_error_t disconnect_sta_impl(
         return err;
     }
 
-    ctx->auto_reconnect_enabled          = false;
-    ctx->sta_connection_commit_required = false;
-    ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
-    ctx->reconnect_trial_count          = 0;
+    ctx->auto_reconnect_enabled             = false;
+    ctx->sta_connection_commit_required     = false;
+    ctx->ap_enabled_by_reconnect_threshold = false;
+    ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+    ctx->reconnect_trial_count             = 0;
 
     if (ctx->cfg.ap_auto_manage_enabled) {
         err = ensure_apsta(ctx, tag);
@@ -601,8 +606,9 @@ static dom_models_error_t commit_sta_connection_impl(
         }
     }
 
-    ctx->sta_connection_commit_required = false;
-    ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+    ctx->sta_connection_commit_required     = false;
+    ctx->ap_enabled_by_reconnect_threshold = false;
+    ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
 
     ctx->cfg.logger->info(ctx->cfg.logger, tag, "STA connection committed successfully");
 
@@ -661,10 +667,11 @@ static dom_models_error_t set_sta_credential_impl(
         return err;
     }
 
-    ctx->auto_reconnect_enabled          = true;
-    ctx->sta_connection_commit_required = false;
-    ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
-    ctx->reconnect_trial_count          = 0;
+    ctx->auto_reconnect_enabled             = true;
+    ctx->sta_connection_commit_required     = false;
+    ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+    ctx->ap_enabled_by_reconnect_threshold = false;
+    ctx->reconnect_trial_count             = 0;
 
     ctx->cfg.logger->info(ctx->cfg.logger, tag, "STA credential stored successfully");
 
@@ -688,10 +695,11 @@ static dom_models_error_t forget_sta_credential_impl(
         return err;
     }
 
-    ctx->auto_reconnect_enabled          = false;
-    ctx->sta_connection_commit_required = false;
-    ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
-    ctx->reconnect_trial_count          = 0;
+    ctx->auto_reconnect_enabled             = false;
+    ctx->sta_connection_commit_required     = false;
+    ctx->ap_enabled_by_reconnect_threshold = false;
+    ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+    ctx->reconnect_trial_count             = 0;
 
     if (ctx->cfg.ap_auto_manage_enabled) {
         err = ensure_apsta(ctx, tag);
@@ -738,6 +746,17 @@ static dom_models_error_t need_reconnect_impl(
 
     if (status.connected) {
         ctx->reconnect_trial_count = 0;
+
+        if (ctx->cfg.ap_auto_manage_enabled && ctx->ap_enabled_by_reconnect_threshold) {
+            ctx->ap_enabled_by_reconnect_threshold = false;
+            if (ctx->ap_started) {
+                err = stop_ap(ctx, tag);
+                if (err != DOMAIN_MODELS_ERROR_OK) {
+                    return err;
+                }
+            }
+        }
+
         ctx->cfg.logger->info(ctx->cfg.logger, tag, "Reconnect is not needed because STA is connected");
         return DOMAIN_MODELS_ERROR_OK;
     }
@@ -748,9 +767,9 @@ static dom_models_error_t need_reconnect_impl(
             if (err != DOMAIN_MODELS_ERROR_OK) {
                 return err;
             }
+            ctx->ap_enabled_by_reconnect_threshold = true;
         }
-        ctx->cfg.logger->info(ctx->cfg.logger, tag, "Reconnect is not needed because retry limit is reached");
-        return DOMAIN_MODELS_ERROR_OK;
+        ctx->cfg.logger->info(ctx->cfg.logger, tag, "AP enabled because reconnect trial threshold is reached");
     }
 
     dom_models_wifi_sta_credential_t credential;
@@ -842,6 +861,7 @@ static dom_models_error_t try_reconnect_impl(
             if (ap_err != DOMAIN_MODELS_ERROR_OK) {
                 return ap_err;
             }
+            ctx->ap_enabled_by_reconnect_threshold = true;
         }
         ctx->cfg.logger->error(ctx->cfg.logger, tag, "Failed to reconnect using stored STA credential: %s (%d)", dom_models_error_str(err), (int)err);
         return err;
@@ -876,9 +896,16 @@ static void on_wifi_event(
         case DOM_MODELS_WIFI_EVENT_STA_CONNECTED:
             ctx->reconnect_trial_count = 0;
 
-            if (ctx->cfg.ap_auto_manage_enabled && ctx->sta_connect_source == APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_RECONNECT) {
-                ctx->sta_connection_commit_required = false;
-                ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+            if (ctx->cfg.ap_auto_manage_enabled && ctx->sta_connect_source == APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_INITIAL) {
+                ctx->sta_connection_commit_required    = true;
+                ctx->ap_enabled_by_reconnect_threshold = false;
+                ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+            } else if (ctx->cfg.ap_auto_manage_enabled &&
+                       (ctx->sta_connect_source == APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_RECONNECT ||
+                        ctx->ap_enabled_by_reconnect_threshold)) {
+                ctx->sta_connection_commit_required    = false;
+                ctx->ap_enabled_by_reconnect_threshold = false;
+                ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
 
                 if (ctx->ap_started) {
                     err = stop_ap(ctx, tag);
@@ -886,11 +913,9 @@ static void on_wifi_event(
                         ctx->cfg.logger->error(ctx->cfg.logger, tag, "Failed to disable AP after STA reconnection: %s (%d)", dom_models_error_str(err), (int)err);
                     }
                 }
-            } else if (ctx->cfg.ap_auto_manage_enabled && ctx->sta_connect_source == APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_INITIAL) {
-                ctx->sta_connection_commit_required = true;
-                ctx->sta_connect_source             = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
             } else {
-                ctx->sta_connect_source = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
+                ctx->ap_enabled_by_reconnect_threshold = false;
+                ctx->sta_connect_source                = APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_NONE;
             }
 
             ctx->cfg.logger->info(ctx->cfg.logger, tag, "STA connected event handled successfully");
@@ -899,13 +924,16 @@ static void on_wifi_event(
         case DOM_MODELS_WIFI_EVENT_STA_DISCONNECTED:
             ctx->sta_connection_commit_required = false;
 
+            bool reconnect_threshold_reached = ctx->reconnect_trial_count >= ctx->cfg.reconnect_max_trials;
             if (ctx->cfg.ap_auto_manage_enabled &&
                 (ctx->sta_connect_source == APP_WIFIMAN_IMPL_STA_CONNECT_SOURCE_INITIAL ||
                  !ctx->auto_reconnect_enabled ||
-                 ctx->reconnect_trial_count >= ctx->cfg.reconnect_max_trials)) {
+                 reconnect_threshold_reached)) {
                 err = ensure_apsta(ctx, tag);
                 if (err != DOMAIN_MODELS_ERROR_OK) {
                     ctx->cfg.logger->error(ctx->cfg.logger, tag, "Failed to enable AP after STA disconnected event: %s (%d)", dom_models_error_str(err), (int)err);
+                } else if (reconnect_threshold_reached) {
+                    ctx->ap_enabled_by_reconnect_threshold = true;
                 }
             }
 
@@ -920,7 +948,8 @@ static void on_wifi_event(
             break;
 
         case DOM_MODELS_WIFI_EVENT_AP_STOPPED:
-            ctx->ap_started = false;
+            ctx->ap_started                         = false;
+            ctx->ap_enabled_by_reconnect_threshold = false;
             ctx->cfg.logger->info(ctx->cfg.logger, tag, "AP stopped event handled successfully");
             break;
 
@@ -1084,6 +1113,7 @@ static dom_models_error_t stop_ap(
     }
 
     ctx->ap_started = false;
+    ctx->ap_enabled_by_reconnect_threshold = false;
     ctx->cfg.logger->info(ctx->cfg.logger, tag, "AP stopped successfully");
 
     return DOMAIN_MODELS_ERROR_OK;

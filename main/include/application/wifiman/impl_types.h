@@ -39,6 +39,7 @@ typedef struct {
     bool                                   event_callback_registered;
     bool                                   auto_reconnect_enabled;
     bool                                   sta_connection_commit_required;
+    bool                                   ap_enabled_by_reconnect_threshold;
     app_wifiman_impl_sta_connect_source_t sta_connect_source;
     size_t                                 reconnect_trial_count;
 } app_wifiman_impl_ctx_t;
